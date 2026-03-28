@@ -169,27 +169,50 @@ export default function MenuPage() {
           </div>
         )}
 
-        {/* Items Grid */}
-        {!loading && (
-          <>
-            {filteredItems.length === 0 ? (
-              <div className="text-center py-16">
-                <p className="font-body text-sm text-surface-400">
-                  {language === "RU" ? "Ничего не найдено" : language === "KZ" ? "Ештеңе табылмады" : "Nothing found"}
-                </p>
-              </div>
-            ) : (
+{/* Items Grid - Grouped by Category */}
+{!loading && (
+  <>
+    {filteredItems.length === 0 ? (
+      <div className="text-center py-16">
+        <p className="font-body text-sm text-surface-400">
+          {language === "RU" ? "Ничего не найдено" : language === "KZ" ? "Ештеңе табылмады" : "Nothing found"}
+        </p>
+      </div>
+    ) : activeCategory !== "all" ? (
+      // Single category selected — flat grid, no headers
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3">
+        {filteredItems.map((item, i) => (
+          <div key={item.id} className={`opacity-0 animate-fade-in stagger-${Math.min(i + 1, 8)}`}>
+            <MenuItemCard item={item} />
+          </div>
+        ))}
+      </div>
+    ) : (
+      // "All" selected — group by category
+      <div className="space-y-6">
+        {categories
+          .filter((cat) => filteredItems.some((item) => item.categoryId === cat.id))
+          .map((cat) => (
+            <section key={cat.id}>
+              <h2 className="font-display text-base sm:text-lg font-semibold text-surface-900 mb-2.5 flex items-center gap-1.5">
+                <span>{cat.icon}</span>
+                <span>{cat.name[language]}</span>
+              </h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3">
-                {filteredItems.map((item, i) => (
-                  <div key={item.id} className={`opacity-0 animate-fade-in stagger-${Math.min(i + 1, 8)}`}>
-                    <MenuItemCard item={item} />
-                  </div>
-                ))}
+                {filteredItems
+                  .filter((item) => item.categoryId === cat.id)
+                  .map((item) => (
+                    <div key={item.id}>
+                      <MenuItemCard item={item} />
+                    </div>
+                  ))}
               </div>
-            )}
-          </>
-        )}
-      </main>
+            </section>
+          ))}
+      </div>
+    )}
+  </>
+)}      </main>
 
       {/* Floating Cart Bar */}
       {totalItems > 0 && (

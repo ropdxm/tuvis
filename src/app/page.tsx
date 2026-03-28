@@ -109,10 +109,10 @@ export default function HomePage() {
               +7 701 038 55 50
             </a>
             <div className="flex gap-2.5 mt-3">
-              <a href="https://www.instagram.com/Tuvis.coffee/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-surface-200 rounded-lg text-surface-500 hover:text-surface-700 hover:border-surface-300 transition-all text-xs font-body">
+              <a href="https://www.instagram.com/zhanbyrshyn/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-surface-200 rounded-lg text-surface-500 hover:text-surface-700 hover:border-surface-300 transition-all text-xs font-body">
                 Instagram
               </a>
-              <a href="https://api.whatsapp.com/send?phone=77010385550" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-surface-200 rounded-lg text-surface-500 hover:text-surface-700 hover:border-surface-300 transition-all text-xs font-body">
+              <a href="https://api.whatsapp.com/send?phone=77474829219" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-surface-200 rounded-lg text-surface-500 hover:text-surface-700 hover:border-surface-300 transition-all text-xs font-body">
                 WhatsApp
               </a>
             </div>

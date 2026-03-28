@@ -8,6 +8,7 @@ import { useCart } from "@/context/CartContext";
 import { t } from "@/lib/translations";
 import { db } from "@/lib/firebase";
 import { collection, addDoc } from "firebase/firestore";
+import { addOrderToHistory } from "@/lib/orderHistory";
 import Header from "@/components/Header";
 
 export default function PaymentPage() {
@@ -47,6 +48,19 @@ export default function PaymentPage() {
       };
 
       const docRef = await addDoc(collection(db, "orders"), orderData);
+
+      // Save to local order history
+      addOrderToHistory({
+        id: docRef.id,
+        items: orderData.items,
+        subtotal,
+        total,
+        customerName: customerName.trim(),
+        customerPhone: customerPhone.trim(),
+        language,
+        createdAt: orderData.createdAt,
+      });
+
       clearCart();
       router.push(`/order/${docRef.id}`);
     } catch (err) {

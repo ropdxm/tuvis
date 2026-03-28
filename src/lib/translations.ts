@@ -69,10 +69,15 @@ type TranslationKeys =
   | "login"
   | "wrongPassword"
   | "logout"
-  | "fillAllFields";
+  | "fillAllFields"
+  | "orderHistory"
+  | "noOrderHistory"
+  | "noOrderHistoryDesc"
+  | "clearHistory"
+  | "managerCall";
 
 export const translations: Record<TranslationKeys, Record<Language, string>> = {
-  siteName: { RU: "Tuvis", KZ: "Tuvis", EN: "Tuvis" },
+  siteName: { RU: "ТАРЫ", KZ: "ТАРЫ", EN: "TARY" },
   tagline: { RU: "Аксессуары для телефонов", KZ: "Телефон аксессуарлары", EN: "Phone Accessories" },
   viewMenu: { RU: "Смотреть каталог", KZ: "Каталогты қарау", EN: "View catalog" },
   additionally: { RU: "Дополнительно:", KZ: "Қосымша:", EN: "Additionally:" },
@@ -141,6 +146,11 @@ export const translations: Record<TranslationKeys, Record<Language, string>> = {
   wrongPassword: { RU: "Неверный пароль", KZ: "Қате құпия сөз", EN: "Wrong password" },
   logout: { RU: "Выйти", KZ: "Шығу", EN: "Logout" },
   fillAllFields: { RU: "Заполните все поля", KZ: "Барлық өрістерді толтырыңыз", EN: "Please fill in all fields" },
+  orderHistory: { RU: "Мои заказы", KZ: "Менің тапсырыстарым", EN: "My Orders" },
+  noOrderHistory: { RU: "Заказов пока нет", KZ: "Тапсырыстар әлі жоқ", EN: "No orders yet" },
+  noOrderHistoryDesc: { RU: "Здесь будут ваши прошлые заказы", KZ: "Мұнда сіздің өткен тапсырыстарыңыз болады", EN: "Your past orders will appear here" },
+  clearHistory: { RU: "Очистить", KZ: "Тазалау", EN: "Clear" },
+  managerCall: {RU: "Наш менеджер вам скоро позвонит! Ожидайте.", KZ: "Біз сізге жуырда хабарласамыз!", EN: "Our manager will contact you soon!"}
 };
 
 export function t(key: TranslationKeys, lang: Language): string {

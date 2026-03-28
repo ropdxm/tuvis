@@ -15,7 +15,7 @@ export default function Header() {
     <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-surface-200">
       <div className="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between">
         <Link href="/" className="font-display text-xl font-bold tracking-tight text-surface-900">
-          Tuvis
+          TARY
         </Link>
 
         <div className="flex items-center gap-2 sm:gap-3">
@@ -35,6 +35,20 @@ export default function Header() {
               </button>
             ))}
           </div>
+
+          {/* Orders History */}
+          <Link
+            href="/orders"
+            className="relative flex items-center justify-center w-10 h-10 rounded-full bg-surface-100 text-surface-600 hover:bg-surface-200 hover:text-surface-800 transition-all"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
+              <path d="M14 2v6h6" />
+              <path d="M16 13H8" />
+              <path d="M16 17H8" />
+              <path d="M10 9H8" />
+            </svg>
+          </Link>
 
           {/* Cart */}
           <Link
