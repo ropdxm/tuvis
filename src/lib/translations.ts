@@ -77,7 +77,7 @@ type TranslationKeys =
   | "managerCall";
 
 export const translations: Record<TranslationKeys, Record<Language, string>> = {
-  siteName: { RU: "ТАРЫ", KZ: "ТАРЫ", EN: "TARY" },
+  siteName: { RU: "Tuvis", KZ: "Tuvis", EN: "Tuvis" },
   tagline: { RU: "Аксессуары для телефонов", KZ: "Телефон аксессуарлары", EN: "Phone Accessories" },
   viewMenu: { RU: "Смотреть каталог", KZ: "Каталогты қарау", EN: "View catalog" },
   additionally: { RU: "Дополнительно:", KZ: "Қосымша:", EN: "Additionally:" },
@@ -85,7 +85,7 @@ export const translations: Record<TranslationKeys, Record<Language, string>> = {
   writeAdmin: { RU: "Написать администратору", KZ: "Әкімшіге жазу", EN: "Write to the administrator" },
   leaveFeedback: { RU: "Оставить отзыв", KZ: "Пікір қалдыру", EN: "Leave feedback" },
   address: { RU: "Адрес магазина", KZ: "Дүкен мекенжайы", EN: "Store address" },
-  addressValue: { RU: "г. Шымкент, улица Байсеитова, 4", KZ: "Шымкент қаласы, Байсейітова көшесі, 4", EN: "Shymkent, Baiseitova street, 4" },
+  addressValue: { RU: "г. Шымкент, улица Байсеитова, 1", KZ: "Шымкент қаласы, Байсейітова көшесі, 1", EN: "Shymkent, Baiseitova street, 1" },
   workSchedule: { RU: "Режим работы", KZ: "Жұмыс режимі", EN: "Work schedule" },
   scheduleValue: { RU: "10:00 – 21:00", KZ: "10:00 – 21:00", EN: "10:00 AM – 9:00 PM" },
   contacts: { RU: "Контакты", KZ: "Байланыстар", EN: "Contacts" },
@@ -146,9 +146,9 @@ export const translations: Record<TranslationKeys, Record<Language, string>> = {
   wrongPassword: { RU: "Неверный пароль", KZ: "Қате құпия сөз", EN: "Wrong password" },
   logout: { RU: "Выйти", KZ: "Шығу", EN: "Logout" },
   fillAllFields: { RU: "Заполните все поля", KZ: "Барлық өрістерді толтырыңыз", EN: "Please fill in all fields" },
-  orderHistory: { RU: "Мои заказы", KZ: "Менің тапсырыстарым", EN: "My Orders" },
+  orderHistory: { RU: "Мои заказы", KZ: "Менің тапсырысTuvisм", EN: "My Orders" },
   noOrderHistory: { RU: "Заказов пока нет", KZ: "Тапсырыстар әлі жоқ", EN: "No orders yet" },
-  noOrderHistoryDesc: { RU: "Здесь будут ваши прошлые заказы", KZ: "Мұнда сіздің өткен тапсырыстарыңыз болады", EN: "Your past orders will appear here" },
+  noOrderHistoryDesc: { RU: "Здесь будут ваши прошлые заказы", KZ: "Мұнда сіздің өткен тапсырысTuvisңыз болады", EN: "Your past orders will appear here" },
   clearHistory: { RU: "Очистить", KZ: "Тазалау", EN: "Clear" },
   managerCall: {RU: "Наш менеджер вам скоро позвонит! Ожидайте.", KZ: "Біз сізге жуырда хабарласамыз!", EN: "Our manager will contact you soon!"}
 };

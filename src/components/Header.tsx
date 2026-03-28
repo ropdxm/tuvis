@@ -15,7 +15,7 @@ export default function Header() {
     <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-surface-200">
       <div className="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between">
         <Link href="/" className="font-display text-xl font-bold tracking-tight text-surface-900">
-          TARY
+          Tuvis
         </Link>
 
         <div className="flex items-center gap-2 sm:gap-3">

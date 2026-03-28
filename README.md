@@ -29,7 +29,7 @@ A full-stack Next.js e-commerce app for phone accessories, inspired by the Tuvis
 | `/cart` | Shopping cart with totals |
 | `/payment` | Kaspi QR code + customer info + "I paid" button |
 | `/order/[id]` | Order confirmation with live status |
-| `/dashboard` | Manager panel (password: `tary2024`) |
+| `/dashboard` | Manager panel (password: `tuvis2024`) |
 
 ## Getting Started
 

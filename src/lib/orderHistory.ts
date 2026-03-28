@@ -19,7 +19,7 @@ export interface LocalOrder {
   createdAt: number;
 }
 
-const STORAGE_KEY = "tary-order-history";
+const STORAGE_KEY = "Tuvis-order-history";
 
 function getOrders(): LocalOrder[] {
   if (typeof window === "undefined") return [];
