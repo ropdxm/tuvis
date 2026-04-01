@@ -1,6 +1,6 @@
-# Tuvis — Phone Accessories Store
+# DDD optom — Phone Accessories Store
 
-A full-stack Next.js e-commerce app for phone accessories, inspired by the Tuvis store in Shymkent, Kazakhstan. Features product browsing with subcategories, shopping cart, Kaspi QR payment, and a real-time manager dashboard.
+A full-stack Next.js e-commerce app for phone accessories, inspired by the DDD optom store in Shymkent, Kazakhstan. Features product browsing with subcategories, shopping cart, Kaspi QR payment, and a real-time manager dashboard.
 
 ## Tech Stack
 

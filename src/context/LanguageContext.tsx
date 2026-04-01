@@ -17,7 +17,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguage] = useState<Language>("RU");
 
   useEffect(() => {
-    const saved = localStorage.getItem("Tuvis-lang") as Language | null;
+    const saved = localStorage.getItem("DDD optom-lang") as Language | null;
     if (saved && ["RU", "KZ", "EN"].includes(saved)) {
       setLanguage(saved);
     }
@@ -25,7 +25,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   const handleSetLanguage = (lang: Language) => {
     setLanguage(lang);
-    localStorage.setItem("Tuvis-lang", lang);
+    localStorage.setItem("DDD optom-lang", lang);
   };
 
   return (

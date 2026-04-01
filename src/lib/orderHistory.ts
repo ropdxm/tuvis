@@ -19,7 +19,7 @@ export interface LocalOrder {
   createdAt: number;
 }
 
-const STORAGE_KEY = "Tuvis-order-history";
+const STORAGE_KEY = "DDD optom-order-history";
 
 function getOrders(): LocalOrder[] {
   if (typeof window === "undefined") return [];

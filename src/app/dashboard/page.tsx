@@ -24,7 +24,7 @@ export default function DashboardPage() {
 
   // Check session
   useEffect(() => {
-    const saved = sessionStorage.getItem("Tuvis-dashboard-auth");
+    const saved = sessionStorage.getItem("DDD optom-dashboard-auth");
     if (saved === "true") setAuthenticated(true);
   }, []);
 
@@ -48,7 +48,7 @@ export default function DashboardPage() {
   const handleLogin = () => {
     if (passwordInput === MANAGER_PASSWORD) {
       setAuthenticated(true);
-      sessionStorage.setItem("Tuvis-dashboard-auth", "true");
+      sessionStorage.setItem("DDD optom-dashboard-auth", "true");
       setLoginError(false);
     } else {
       setLoginError(true);
@@ -57,7 +57,7 @@ export default function DashboardPage() {
 
   const handleLogout = () => {
     setAuthenticated(false);
-    sessionStorage.removeItem("Tuvis-dashboard-auth");
+    sessionStorage.removeItem("DDD optom-dashboard-auth");
   };
 
   const updateOrderStatus = useCallback(async (orderId: string, status: Order["status"]) => {
@@ -91,7 +91,7 @@ export default function DashboardPage() {
           <div className="bg-white border border-surface-200 rounded-2xl p-6 sm:p-8 shadow-sm animate-fade-in">
             <div className="text-center mb-6">
               <div className="w-14 h-14 mx-auto rounded-xl bg-surface-900 flex items-center justify-center mb-4">
-                <span className="font-display text-xl font-bold text-white">T</span>
+                <span className="font-display text-xl font-bold text-white">DDD</span>
               </div>
               <h1 className="font-display text-xl font-bold text-surface-900">
                 {t("loginTitle", language)}
@@ -141,7 +141,7 @@ export default function DashboardPage() {
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-surface-900 flex items-center justify-center">
-              <span className="font-display text-sm font-bold text-white">T</span>
+              <span className="font-display text-sm font-bold text-white">DDD</span>
             </div>
             <h1 className="font-display text-base sm:text-lg font-bold text-surface-900">
               {t("dashboard", language)}

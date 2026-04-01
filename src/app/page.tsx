@@ -21,7 +21,7 @@ export default function HomePage() {
           {/* Logo circle */}
           <div className="mb-5 animate-fade-in">
             <div className="w-20 h-20 sm:w-24 sm:h-24 mx-auto rounded-2xl bg-surface-900 flex items-center justify-center shadow-lg">
-              <span className="font-display text-2xl sm:text-3xl font-bold text-white tracking-wider">T</span>
+              <span className="font-display text-2xl sm:text-3xl font-bold text-white tracking-wider">DDD</span>
             </div>
           </div>
 
@@ -121,7 +121,7 @@ export default function HomePage() {
 
         <div className="mt-8 text-center">
           <p className="font-body text-[10px] text-surface-400">
-            {t("poweredBy", language)} Tuvis
+            {t("poweredBy", language)} DDD optom
           </p>
         </div>
       </section>

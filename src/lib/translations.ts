@@ -77,7 +77,7 @@ type TranslationKeys =
   | "managerCall";
 
 export const translations: Record<TranslationKeys, Record<Language, string>> = {
-  siteName: { RU: "Tuvis", KZ: "Tuvis", EN: "Tuvis" },
+  siteName: { RU: "DDD optom", KZ: "DDD optom", EN: "DDD optom" },
   tagline: { RU: "Аксессуары для телефонов", KZ: "Телефон аксессуарлары", EN: "Phone Accessories" },
   viewMenu: { RU: "Смотреть каталог", KZ: "Каталогты қарау", EN: "View catalog" },
   additionally: { RU: "Дополнительно:", KZ: "Қосымша:", EN: "Additionally:" },

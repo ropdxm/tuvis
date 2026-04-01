@@ -4,8 +4,8 @@ import { CartProvider } from "@/context/CartContext";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Tuvis — Phone Accessories",
-  description: "Tuvis — аксессуары для телефонов в Шымкенте. Чехлы, наушники, зарядки и многое другое.",
+  title: "DDD optom — Phone Accessories",
+  description: "DDD optom — аксессуары для телефонов в Шымкенте. Чехлы, наушники, зарядки и многое другое.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -27,7 +27,7 @@ const CartContext = createContext<CartContextType>({
   justAdded: null,
 });
 
-const STORAGE_KEY = "Tuvis-cart";
+const STORAGE_KEY = "DDD optom-cart";
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
