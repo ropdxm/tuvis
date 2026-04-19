@@ -11,11 +11,40 @@ import Header from "@/components/Header";
 import MenuItemCard from "@/components/MenuItemCard";
 import { MenuCategory, MenuSubcategory, MenuItem } from "@/types";
 
+const PHONE_CASE_CATEGORY_ID = "cases";
+const PHONE_CASE_BRAND_IDS = ["cases-iphone", "cases-samsung", "cases-redmi", "cases-google-pixel"];
+
+function ensurePhoneCaseHierarchy(loadedSubcategories: MenuSubcategory[]) {
+  const phoneCaseIds = new Set(
+    sampleSubcategories.filter((sub) => sub.categoryId === PHONE_CASE_CATEGORY_ID).map((sub) => sub.id)
+  );
+  const merged = new Map<string, MenuSubcategory>();
+
+  loadedSubcategories
+    .filter((sub) => sub.categoryId !== PHONE_CASE_CATEGORY_ID || phoneCaseIds.has(sub.id))
+    .forEach((sub) => merged.set(sub.id, sub));
+
+  sampleSubcategories
+    .filter((sub) => sub.categoryId === PHONE_CASE_CATEGORY_ID)
+    .forEach((sub) => merged.set(sub.id, sub));
+
+  return Array.from(merged.values()).sort((a, b) => a.order - b.order);
+}
+
+function normalizePhoneCaseItems(loadedItems: MenuItem[]) {
+  return loadedItems.map((item) =>
+    item.categoryId === PHONE_CASE_CATEGORY_ID && item.subcategoryId === "cases-xiaomi"
+      ? { ...item, subcategoryId: "cases-redmi-note-14" }
+      : item
+  );
+}
+
 export default function MenuPage() {
   const { language } = useLanguage();
   const { totalItems, total } = useCart();
   const [activeCategory, setActiveCategory] = useState<string>("all");
   const [activeSubcategory, setActiveSubcategory] = useState<string>("all");
+  const [activeModelSubcategory, setActiveModelSubcategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [categories, setCategories] = useState<MenuCategory[]>(sampleCategories);
   const [subcategories, setSubcategories] = useState<MenuSubcategory[]>(sampleSubcategories);
@@ -29,8 +58,12 @@ export default function MenuPage() {
         const subSnap = await getDocs(query(collection(db, "subcategories"), orderBy("order")));
         const itemSnap = await getDocs(collection(db, "menuItems"));
         if (catSnap.size > 0) setCategories(catSnap.docs.map((d) => ({ id: d.id, ...d.data() }) as MenuCategory));
-        if (subSnap.size > 0) setSubcategories(subSnap.docs.map((d) => ({ id: d.id, ...d.data() }) as MenuSubcategory));
-        if (itemSnap.size > 0) setMenuItems(itemSnap.docs.map((d) => ({ id: d.id, ...d.data() }) as MenuItem));
+        if (subSnap.size > 0) {
+          setSubcategories(ensurePhoneCaseHierarchy(subSnap.docs.map((d) => ({ id: d.id, ...d.data() }) as MenuSubcategory)));
+        }
+        if (itemSnap.size > 0) {
+          setMenuItems(normalizePhoneCaseItems(itemSnap.docs.map((d) => ({ id: d.id, ...d.data() }) as MenuItem)));
+        }
       } catch {
         console.log("Using sample data (Firebase not configured)");
       } finally {
@@ -43,17 +76,44 @@ export default function MenuPage() {
   // Reset subcategory when category changes
   useEffect(() => {
     setActiveSubcategory("all");
+    setActiveModelSubcategory("all");
   }, [activeCategory]);
+
+  useEffect(() => {
+    setActiveModelSubcategory("all");
+  }, [activeSubcategory]);
+
+  const isPhoneCasesActive = activeCategory === PHONE_CASE_CATEGORY_ID;
 
   const currentSubcategories = useMemo(() => {
     if (activeCategory === "all") return [];
-    return subcategories.filter((s) => s.categoryId === activeCategory);
-  }, [activeCategory, subcategories]);
+    const categorySubcategories = subcategories.filter((s) => s.categoryId === activeCategory);
+    if (isPhoneCasesActive) {
+      return categorySubcategories.filter((s) => !s.parentId && PHONE_CASE_BRAND_IDS.includes(s.id));
+    }
+    return categorySubcategories.filter((s) => !s.parentId);
+  }, [activeCategory, isPhoneCasesActive, subcategories]);
+
+  const currentModelSubcategories = useMemo(() => {
+    if (!isPhoneCasesActive || activeSubcategory === "all") return [];
+    return subcategories.filter((s) => s.categoryId === activeCategory && s.parentId === activeSubcategory);
+  }, [activeCategory, activeSubcategory, isPhoneCasesActive, subcategories]);
 
   const filteredItems = useMemo(() => {
     let items = menuItems.filter((item) => item.available);
     if (activeCategory !== "all") items = items.filter((item) => item.categoryId === activeCategory);
-    if (activeSubcategory !== "all") items = items.filter((item) => item.subcategoryId === activeSubcategory);
+    if (isPhoneCasesActive) {
+      if (activeModelSubcategory !== "all") {
+        items = items.filter((item) => item.subcategoryId === activeModelSubcategory);
+      } else if (activeSubcategory !== "all") {
+        const modelIds = subcategories
+          .filter((sub) => sub.parentId === activeSubcategory)
+          .map((sub) => sub.id);
+        items = items.filter((item) => item.subcategoryId && modelIds.includes(item.subcategoryId));
+      }
+    } else if (activeSubcategory !== "all") {
+      items = items.filter((item) => item.subcategoryId === activeSubcategory);
+    }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       items = items.filter(
@@ -63,7 +123,7 @@ export default function MenuPage() {
       );
     }
     return items;
-  }, [menuItems, activeCategory, activeSubcategory, searchQuery, language]);
+  }, [menuItems, activeCategory, activeSubcategory, activeModelSubcategory, isPhoneCasesActive, subcategories, searchQuery, language]);
 
   return (
     <div className="min-h-dvh bg-surface-50">
@@ -124,17 +184,17 @@ export default function MenuPage() {
 
         {/* Subcategory Tabs */}
         {currentSubcategories.length > 0 && (
-          <div className="relative mb-4">
+          <div className={`relative ${currentModelSubcategories.length > 0 ? "mb-2" : "mb-4"}`}>
             <div className="flex gap-1.5 overflow-x-auto category-scroll pb-2 -mx-4 px-4">
               <button
                 onClick={() => setActiveSubcategory("all")}
                 className={`flex-shrink-0 px-3 py-1.5 rounded-lg font-body text-[11px] font-medium transition-all duration-200 border whitespace-nowrap ${
                   activeSubcategory === "all"
                     ? "bg-surface-700 text-white border-surface-700"
-                    : "bg-white text-surface-500 border-surface-200 hover:border-surface-300"
+                  : "bg-white text-surface-500 border-surface-200 hover:border-surface-300"
                 }`}
               >
-                {t("allSubcategories", language)}
+                {isPhoneCasesActive ? t("allBrands", language) : t("allSubcategories", language)}
               </button>
               {currentSubcategories.map((sub) => (
                 <button
@@ -142,6 +202,37 @@ export default function MenuPage() {
                   onClick={() => setActiveSubcategory(sub.id)}
                   className={`flex-shrink-0 px-3 py-1.5 rounded-lg font-body text-[11px] font-medium transition-all duration-200 border whitespace-nowrap ${
                     activeSubcategory === sub.id
+                      ? "bg-surface-700 text-white border-surface-700"
+                      : "bg-white text-surface-500 border-surface-200 hover:border-surface-300"
+                  }`}
+                >
+                  {sub.name[language]}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Phone Model Tabs */}
+        {currentModelSubcategories.length > 0 && (
+          <div className="relative mb-4">
+            <div className="flex gap-1.5 overflow-x-auto category-scroll pb-2 -mx-4 px-4">
+              <button
+                onClick={() => setActiveModelSubcategory("all")}
+                className={`flex-shrink-0 px-3 py-1.5 rounded-lg font-body text-[11px] font-medium transition-all duration-200 border whitespace-nowrap ${
+                  activeModelSubcategory === "all"
+                    ? "bg-surface-700 text-white border-surface-700"
+                    : "bg-white text-surface-500 border-surface-200 hover:border-surface-300"
+                }`}
+              >
+                {t("allSubcategories", language)}
+              </button>
+              {currentModelSubcategories.map((sub) => (
+                <button
+                  key={sub.id}
+                  onClick={() => setActiveModelSubcategory(sub.id)}
+                  className={`flex-shrink-0 px-3 py-1.5 rounded-lg font-body text-[11px] font-medium transition-all duration-200 border whitespace-nowrap ${
+                    activeModelSubcategory === sub.id
                       ? "bg-surface-700 text-white border-surface-700"
                       : "bg-white text-surface-500 border-surface-200 hover:border-surface-300"
                   }`}

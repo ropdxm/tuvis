@@ -13,12 +13,33 @@ export const sampleCategories: MenuCategory[] = [
 
 export const sampleSubcategories: MenuSubcategory[] = [
   // Cases
-  { id: "cases-iphone17", name: { RU: "iPhone 17", KZ: "iPhone 17", EN: "iPhone 17" }, categoryId: "cases", order: 1 },
-  { id: "cases-iphone16", name: { RU: "iPhone 16", KZ: "iPhone 16", EN: "iPhone 16" }, categoryId: "cases", order: 2 },
-  { id: "cases-iphone15", name: { RU: "iPhone 15", KZ: "iPhone 15", EN: "iPhone 15" }, categoryId: "cases", order: 3 },
-  { id: "cases-samsung-s24", name: { RU: "Samsung S24", KZ: "Samsung S24", EN: "Samsung S24" }, categoryId: "cases", order: 4 },
-  { id: "cases-samsung-s25", name: { RU: "Samsung S25", KZ: "Samsung S25", EN: "Samsung S25" }, categoryId: "cases", order: 5 },
-  { id: "cases-xiaomi", name: { RU: "Xiaomi", KZ: "Xiaomi", EN: "Xiaomi" }, categoryId: "cases", order: 6 },
+  { id: "cases-iphone", name: { RU: "Iphone", KZ: "Iphone", EN: "Iphone" }, categoryId: "cases", order: 1 },
+  { id: "cases-samsung", name: { RU: "Samsung", KZ: "Samsung", EN: "Samsung" }, categoryId: "cases", order: 2 },
+  { id: "cases-redmi", name: { RU: "Redmi", KZ: "Redmi", EN: "Redmi" }, categoryId: "cases", order: 3 },
+  { id: "cases-google-pixel", name: { RU: "Google Pixel", KZ: "Google Pixel", EN: "Google Pixel" }, categoryId: "cases", order: 4 },
+  { id: "cases-iphone16", name: { RU: "Iphone 16", KZ: "Iphone 16", EN: "Iphone 16" }, categoryId: "cases", parentId: "cases-iphone", order: 1 },
+  { id: "cases-iphone16-pro", name: { RU: "Iphone 16 Pro", KZ: "Iphone 16 Pro", EN: "Iphone 16 Pro" }, categoryId: "cases", parentId: "cases-iphone", order: 2 },
+  { id: "cases-iphone16-pro-max", name: { RU: "Iphone 16 Pro Max", KZ: "Iphone 16 Pro Max", EN: "Iphone 16 Pro Max" }, categoryId: "cases", parentId: "cases-iphone", order: 3 },
+  { id: "cases-iphone17", name: { RU: "Iphone 17", KZ: "Iphone 17", EN: "Iphone 17" }, categoryId: "cases", parentId: "cases-iphone", order: 4 },
+  { id: "cases-iphone17-pro", name: { RU: "Iphone 17 Pro", KZ: "Iphone 17 Pro", EN: "Iphone 17 Pro" }, categoryId: "cases", parentId: "cases-iphone", order: 5 },
+  { id: "cases-iphone17-pro-max", name: { RU: "Iphone 17 Pro Max", KZ: "Iphone 17 Pro Max", EN: "Iphone 17 Pro Max" }, categoryId: "cases", parentId: "cases-iphone", order: 6 },
+  { id: "cases-iphone15", name: { RU: "Iphone 15", KZ: "Iphone 15", EN: "Iphone 15" }, categoryId: "cases", parentId: "cases-iphone", order: 7 },
+  { id: "cases-samsung-s25", name: { RU: "Samsung S25", KZ: "Samsung S25", EN: "Samsung S25" }, categoryId: "cases", parentId: "cases-samsung", order: 1 },
+  { id: "cases-samsung-s25-ultra", name: { RU: "Samsung S25 Ultra", KZ: "Samsung S25 Ultra", EN: "Samsung S25 Ultra" }, categoryId: "cases", parentId: "cases-samsung", order: 2 },
+  { id: "cases-samsung-s24", name: { RU: "Samsung S24", KZ: "Samsung S24", EN: "Samsung S24" }, categoryId: "cases", parentId: "cases-samsung", order: 3 },
+  { id: "cases-samsung-s24-ultra", name: { RU: "Samsung S24 Ultra", KZ: "Samsung S24 Ultra", EN: "Samsung S24 Ultra" }, categoryId: "cases", parentId: "cases-samsung", order: 4 },
+  { id: "cases-samsung-a56", name: { RU: "Samsung A56", KZ: "Samsung A56", EN: "Samsung A56" }, categoryId: "cases", parentId: "cases-samsung", order: 5 },
+  { id: "cases-samsung-a36", name: { RU: "Samsung A36", KZ: "Samsung A36", EN: "Samsung A36" }, categoryId: "cases", parentId: "cases-samsung", order: 6 },
+  { id: "cases-redmi-note-14", name: { RU: "Redmi Note 14", KZ: "Redmi Note 14", EN: "Redmi Note 14" }, categoryId: "cases", parentId: "cases-redmi", order: 1 },
+  { id: "cases-redmi-note-14-pro", name: { RU: "Redmi Note 14 Pro", KZ: "Redmi Note 14 Pro", EN: "Redmi Note 14 Pro" }, categoryId: "cases", parentId: "cases-redmi", order: 2 },
+  { id: "cases-redmi-note-13", name: { RU: "Redmi Note 13", KZ: "Redmi Note 13", EN: "Redmi Note 13" }, categoryId: "cases", parentId: "cases-redmi", order: 3 },
+  { id: "cases-redmi-14c", name: { RU: "Redmi 14C", KZ: "Redmi 14C", EN: "Redmi 14C" }, categoryId: "cases", parentId: "cases-redmi", order: 4 },
+  { id: "cases-redmi-13c", name: { RU: "Redmi 13C", KZ: "Redmi 13C", EN: "Redmi 13C" }, categoryId: "cases", parentId: "cases-redmi", order: 5 },
+  { id: "cases-google-pixel-9", name: { RU: "Google Pixel 9", KZ: "Google Pixel 9", EN: "Google Pixel 9" }, categoryId: "cases", parentId: "cases-google-pixel", order: 1 },
+  { id: "cases-google-pixel-9-pro", name: { RU: "Google Pixel 9 Pro", KZ: "Google Pixel 9 Pro", EN: "Google Pixel 9 Pro" }, categoryId: "cases", parentId: "cases-google-pixel", order: 2 },
+  { id: "cases-google-pixel-9-pro-xl", name: { RU: "Google Pixel 9 Pro XL", KZ: "Google Pixel 9 Pro XL", EN: "Google Pixel 9 Pro XL" }, categoryId: "cases", parentId: "cases-google-pixel", order: 3 },
+  { id: "cases-google-pixel-8", name: { RU: "Google Pixel 8", KZ: "Google Pixel 8", EN: "Google Pixel 8" }, categoryId: "cases", parentId: "cases-google-pixel", order: 4 },
+  { id: "cases-google-pixel-8-pro", name: { RU: "Google Pixel 8 Pro", KZ: "Google Pixel 8 Pro", EN: "Google Pixel 8 Pro" }, categoryId: "cases", parentId: "cases-google-pixel", order: 5 },
   // Chargers
   { id: "chargers-typec", name: { RU: "Type-C", KZ: "Type-C", EN: "Type-C" }, categoryId: "chargers", order: 1 },
   { id: "chargers-lightning", name: { RU: "Lightning", KZ: "Lightning", EN: "Lightning" }, categoryId: "chargers", order: 2 },
@@ -60,7 +81,7 @@ export const sampleMenuItems: MenuItem[] = [
   // Samsung S25
   { id: "case-s25-clear", name: { RU: "Прозрачный чехол Samsung S25", KZ: "Samsung S25 мөлдір қап", EN: "Clear Case Samsung S25" }, description: { RU: "Ультратонкий прозрачный чехол 0.5мм", KZ: "0.5мм ультра жіңішке мөлдір қап", EN: "Ultra-thin 0.5mm transparent case" }, price: 2500, image: img("1598327105666-5b89351aff97"), categoryId: "cases", subcategoryId: "cases-samsung-s25", available: true },
   // Xiaomi
-  { id: "case-xiaomi-14", name: { RU: "Чехол Xiaomi 14", KZ: "Xiaomi 14 қап", EN: "Case Xiaomi 14" }, description: { RU: "Матовый силиконовый чехол", KZ: "Күңгірт силикон қап", EN: "Matte silicone case" }, price: 1500, image: img("1606220945770-b5b6c2c55bf1"), categoryId: "cases", subcategoryId: "cases-xiaomi", available: true },
+  { id: "case-xiaomi-14", name: { RU: "Чехол Redmi Note 14", KZ: "Redmi Note 14 қап", EN: "Case Redmi Note 14" }, description: { RU: "Матовый силиконовый чехол", KZ: "Күңгірт силикон қап", EN: "Matte silicone case" }, price: 1500, image: img("1606220945770-b5b6c2c55bf1"), categoryId: "cases", subcategoryId: "cases-redmi-note-14", available: true },
 
   // === EARPHONES ===
   // AirPods

@@ -21,6 +21,7 @@ export interface MenuSubcategory {
   id: string;
   name: TranslatedText;
   categoryId: string;
+  parentId?: string;
   order: number;
 }
 

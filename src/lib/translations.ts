@@ -31,6 +31,7 @@ type TranslationKeys =
   | "processing"
   | "search"
   | "allCategories"
+  | "allBrands"
   | "allSubcategories"
   | "currency"
   | "itemAdded"
@@ -107,6 +108,7 @@ export const translations: Record<TranslationKeys, Record<Language, string>> = {
   processing: { RU: "Обработка...", KZ: "Өңдеу...", EN: "Processing..." },
   search: { RU: "Поиск товаров...", KZ: "Тауарларды іздеу...", EN: "Search products..." },
   allCategories: { RU: "Все", KZ: "Барлығы", EN: "All" },
+  allBrands: { RU: "Все бренды", KZ: "Барлық брендтер", EN: "All brands" },
   allSubcategories: { RU: "Все модели", KZ: "Барлық модельдер", EN: "All models" },
   currency: { RU: "₸", KZ: "₸", EN: "₸" },
   itemAdded: { RU: "Добавлено!", KZ: "Қосылды!", EN: "Added!" },
