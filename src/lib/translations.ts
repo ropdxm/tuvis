@@ -44,9 +44,12 @@ type TranslationKeys =
   | "iPaid"
   | "yourName"
   | "yourPhone"
+  | "yourEmail"
   | "namePlaceholder"
   | "phonePlaceholder"
+  | "emailPlaceholder"
   | "invalidPhone"
+  | "invalidEmail"
   | "phoneHelp"
   | "awaitingConfirmation"
   | "confirmed"
@@ -149,10 +152,13 @@ export const translations: Record<TranslationKeys, Record<Language, string>> = {
   iPaid: { RU: "Я оплатил", KZ: "Мен төледім" },
   yourName: { RU: "Ваше имя", KZ: "Сіздің атыңыз" },
   yourPhone: { RU: "Номер телефона", KZ: "Телефон нөмірі" },
+  yourEmail: { RU: "Email", KZ: "Email" },
   namePlaceholder: { RU: "Введите имя", KZ: "Атыңызды енгізіңіз" },
-  phonePlaceholder: { RU: "+7 777 123 45 67", KZ: "+7 777 123 45 67" },
-  invalidPhone: { RU: "Введите корректный номер телефона с кодом страны.", KZ: "Ел кодымен дұрыс телефон нөмірін енгізіңіз." },
-  phoneHelp: { RU: "Можно вводить номера разных стран, например +7, +996, +998.", KZ: "Әртүрлі ел нөмірлерін енгізуге болады, мысалы +7, +996, +998." },
+  phonePlaceholder: { RU: "777 123 45 67", KZ: "777 123 45 67" },
+  emailPlaceholder: { RU: "name@example.com", KZ: "name@example.com" },
+  invalidPhone: { RU: "Неверный формат номера телефона.", KZ: "Телефон нөмірінің форматы қате." },
+  invalidEmail: { RU: "Введите корректный email.", KZ: "Дұрыс email енгізіңіз." },
+  phoneHelp: { RU: "Код страны добавляется автоматически. Для +7 введите 10 цифр после кода.", KZ: "Ел коды автоматты түрде қосылады. +7 үшін кодтан кейін 10 сан енгізіңіз." },
   awaitingConfirmation: { RU: "Ожидает подтверждения", KZ: "Растауды күтуде" },
   confirmed: { RU: "Подтверждён", KZ: "Расталды" },
   cancelled: { RU: "Отменён", KZ: "Бас тартылды" },

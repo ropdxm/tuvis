@@ -12,23 +12,43 @@ import { addOrderToHistory } from "@/lib/orderHistory";
 import Header from "@/components/Header";
 
 const phoneCountries = [
-  { code: "+7", label: "KZ/RU" },
-  { code: "+996", label: "KG" },
-  { code: "+998", label: "UZ" },
-  { code: "+992", label: "TJ" },
-  { code: "+90", label: "TR" },
-  { code: "+86", label: "CN" },
-  { code: "+1", label: "US" },
+  { code: "+7", label: "KZ/RU", nationalLength: 10 },
+  { code: "+996", label: "KG", nationalLength: 9 },
+  { code: "+998", label: "UZ", nationalLength: 9 },
+  { code: "+992", label: "TJ", nationalLength: 9 },
+  { code: "+90", label: "TR", nationalLength: 10 },
+  { code: "+86", label: "CN", nationalLength: 11 },
+  { code: "+1", label: "US", nationalLength: 10 },
 ];
 
-function normalizePhoneNumber(phone: string, countryCode: string) {
-  const compact = phone.replace(/[^\d+]/g, "");
-  const withCountryCode = compact.startsWith("+") ? compact : `${countryCode}${compact.replace(/^0+/, "")}`;
-  return withCountryCode;
+function getPhoneDigits(phone: string) {
+  return phone.replace(/\D/g, "");
 }
 
-function isValidInternationalPhone(phone: string) {
-  return /^\+[1-9]\d{7,14}$/.test(phone);
+function normalizePhoneNumber(nationalPhone: string, countryCode: string) {
+  return `${countryCode}${getPhoneDigits(nationalPhone)}`;
+}
+
+function isValidPhoneForCountry(nationalPhone: string, countryCode: string) {
+  const country = phoneCountries.find((item) => item.code === countryCode);
+  const digits = getPhoneDigits(nationalPhone);
+  return Boolean(country && digits.length === country.nationalLength);
+}
+
+function isValidEmail(email: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
+}
+
+function cleanNationalPhoneInput(value: string, countryCode: string) {
+  const digits = getPhoneDigits(value);
+  const countryDigits = countryCode.replace(/\D/g, "");
+  const country = phoneCountries.find((item) => item.code === countryCode);
+
+  if (country && digits.startsWith(countryDigits) && digits.length > country.nationalLength) {
+    return digits.slice(countryDigits.length);
+  }
+
+  return digits;
 }
 
 export default function PaymentPage() {
@@ -37,18 +57,23 @@ export default function PaymentPage() {
   const router = useRouter();
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
+  const [customerEmail, setCustomerEmail] = useState("");
   const [phoneCountryCode, setPhoneCountryCode] = useState("+7");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
   const handleIPaid = async () => {
-    if (!customerName.trim() || !customerPhone.trim()) {
+    if (!customerName.trim() || !customerPhone.trim() || !customerEmail.trim()) {
       setError(t("fillAllFields", language));
       return;
     }
     const normalizedPhone = normalizePhoneNumber(customerPhone, phoneCountryCode);
-    if (!isValidInternationalPhone(normalizedPhone)) {
+    if (!isValidPhoneForCountry(customerPhone, phoneCountryCode)) {
       setError(t("invalidPhone", language));
+      return;
+    }
+    if (!isValidEmail(customerEmail)) {
+      setError(t("invalidEmail", language));
       return;
     }
     if (items.length === 0) return;
@@ -69,6 +94,7 @@ export default function PaymentPage() {
         status: "awaiting_confirmation",
         customerName: customerName.trim(),
         customerPhone: normalizedPhone,
+        customerEmail: customerEmail.trim().toLowerCase(),
         language,
         createdAt: Date.now(),
       };
@@ -83,6 +109,7 @@ export default function PaymentPage() {
         total,
         customerName: customerName.trim(),
         customerPhone: normalizedPhone,
+        customerEmail: customerEmail.trim().toLowerCase(),
         language,
         createdAt: orderData.createdAt,
       });
@@ -221,7 +248,10 @@ export default function PaymentPage() {
               <div className="flex gap-2">
                 <select
                   value={phoneCountryCode}
-                  onChange={(e) => setPhoneCountryCode(e.target.value)}
+                  onChange={(e) => {
+                    setPhoneCountryCode(e.target.value);
+                    setCustomerPhone("");
+                  }}
                   className="w-28 px-2.5 py-2.5 bg-surface-50 border border-surface-200 rounded-xl font-body text-sm text-surface-800 focus:outline-none focus:border-surface-400 focus:ring-1 focus:ring-surface-300 transition-all"
                 >
                   {phoneCountries.map((country) => (
@@ -230,15 +260,32 @@ export default function PaymentPage() {
                     </option>
                   ))}
                 </select>
-                <input
-                  type="tel"
-                  value={customerPhone}
-                  onChange={(e) => setCustomerPhone(e.target.value)}
-                  placeholder={t("phonePlaceholder", language)}
-                  className="min-w-0 flex-1 px-3.5 py-2.5 bg-surface-50 border border-surface-200 rounded-xl font-body text-sm text-surface-800 placeholder:text-surface-400 focus:outline-none focus:border-surface-400 focus:ring-1 focus:ring-surface-300 transition-all"
-                />
+                <div className="min-w-0 flex-1 flex overflow-hidden bg-surface-50 border border-surface-200 rounded-xl focus-within:border-surface-400 focus-within:ring-1 focus-within:ring-surface-300 transition-all">
+                  <span className="flex items-center px-3 border-r border-surface-200 bg-white font-body text-sm font-semibold text-surface-700 select-none">
+                    {phoneCountryCode}
+                  </span>
+                  <input
+                    type="tel"
+                    value={customerPhone}
+                    onChange={(e) => setCustomerPhone(cleanNationalPhoneInput(e.target.value, phoneCountryCode))}
+                    placeholder={t("phonePlaceholder", language)}
+                    className="min-w-0 flex-1 px-3.5 py-2.5 bg-transparent font-body text-sm text-surface-800 placeholder:text-surface-400 focus:outline-none"
+                  />
+                </div>
               </div>
               <p className="mt-1.5 font-body text-[11px] text-surface-400">{t("phoneHelp", language)}</p>
+            </div>
+            <div>
+              <label className="block font-display text-xs font-medium text-surface-600 mb-1.5">
+                {t("yourEmail", language)}
+              </label>
+              <input
+                type="email"
+                value={customerEmail}
+                onChange={(e) => setCustomerEmail(e.target.value)}
+                placeholder={t("emailPlaceholder", language)}
+                className="w-full px-3.5 py-2.5 bg-surface-50 border border-surface-200 rounded-xl font-body text-sm text-surface-800 placeholder:text-surface-400 focus:outline-none focus:border-surface-400 focus:ring-1 focus:ring-surface-300 transition-all"
+              />
             </div>
           </div>
         </div>

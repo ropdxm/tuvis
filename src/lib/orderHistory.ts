@@ -15,6 +15,7 @@ export interface LocalOrder {
   total: number;
   customerName: string;
   customerPhone: string;
+  customerEmail?: string;
   language: Language;
   createdAt: number;
 }

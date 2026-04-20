@@ -493,6 +493,14 @@ export default function DashboardPage() {
                         <a href={`tel:${order.customerPhone}`} className="font-body text-surface-600 hover:text-surface-900 transition-colors">
                           {order.customerPhone}
                         </a>
+                        {order.customerEmail && (
+                          <>
+                            <span className="font-body text-surface-400 hidden md:inline">·</span>
+                            <a href={`mailto:${order.customerEmail}`} className="font-body text-surface-600 hover:text-surface-900 transition-colors hidden md:inline">
+                              {order.customerEmail}
+                            </a>
+                          </>
+                        )}
                         <span className="font-body text-surface-400 hidden sm:inline">·</span>
                         <span className="font-display font-semibold text-surface-900 hidden sm:inline">
                           {order.total.toLocaleString()} ₸
@@ -526,6 +534,27 @@ export default function DashboardPage() {
                       <p className="font-body text-xs text-surface-400 mt-3 mb-3 hidden sm:block">
                         {t("date", language)}: {formatDate(order.createdAt)}
                       </p>
+
+                      <div className="grid sm:grid-cols-3 gap-3 bg-surface-50 rounded-lg p-3 mb-3">
+                        <div>
+                          <p className="font-display text-[10px] text-surface-400 uppercase tracking-widest">{t("customer", language)}</p>
+                          <p className="font-body text-sm text-surface-800 mt-0.5">{order.customerName}</p>
+                        </div>
+                        <div>
+                          <p className="font-display text-[10px] text-surface-400 uppercase tracking-widest">{t("phone", language)}</p>
+                          <a href={`tel:${order.customerPhone}`} className="font-body text-sm text-surface-800 hover:text-surface-900 mt-0.5 block">
+                            {order.customerPhone}
+                          </a>
+                        </div>
+                        {order.customerEmail && (
+                          <div>
+                            <p className="font-display text-[10px] text-surface-400 uppercase tracking-widest">{t("yourEmail", language)}</p>
+                            <a href={`mailto:${order.customerEmail}`} className="font-body text-sm text-surface-800 hover:text-surface-900 mt-0.5 block break-all">
+                              {order.customerEmail}
+                            </a>
+                          </div>
+                        )}
+                      </div>
 
                       {/* Items table */}
                       <div className="bg-surface-50 rounded-lg p-3 mb-3">

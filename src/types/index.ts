@@ -52,6 +52,7 @@ export interface Order {
   status: "awaiting_confirmation" | "confirmed" | "cancelled";
   customerName: string;
   customerPhone: string;
+  customerEmail?: string;
   createdAt: number;
   language: Language;
 }

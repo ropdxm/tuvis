@@ -156,6 +156,12 @@ export default function OrdersPage() {
                           <p className="font-display text-[10px] text-surface-400 uppercase tracking-widest">{t("phone", language)}</p>
                           <p className="font-body text-sm text-surface-800 mt-0.5">{order.customerPhone}</p>
                         </div>
+                        {order.customerEmail && (
+                          <div className="col-span-2">
+                            <p className="font-display text-[10px] text-surface-400 uppercase tracking-widest">{t("yourEmail", language)}</p>
+                            <p className="font-body text-sm text-surface-800 mt-0.5 break-all">{order.customerEmail}</p>
+                          </div>
+                        )}
                       </div>
 
                       {/* Items */}
