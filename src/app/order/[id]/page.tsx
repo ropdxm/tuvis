@@ -77,7 +77,7 @@ export default function OrderPage() {
               </svg>
             </div>
             <p className="font-body text-sm text-surface-500 mb-4">
-              {lang === "RU" ? "Заказ не найден" : lang === "KZ" ? "Тапсырыс табылмады" : "Order not found"}
+              {lang === "RU" ? "Заказ не найден" : "Тапсырыс табылмады"}
             </p>
             <Link href="/menu" className="px-6 py-2.5 bg-surface-900 hover:bg-surface-800 text-white font-display text-sm font-medium rounded-xl transition-all inline-block">
               {t("backToMenu", lang)}

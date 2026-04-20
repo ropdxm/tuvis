@@ -14,11 +14,11 @@ export default function OrdersPage() {
 
   const formatDate = (ts: number) => {
     const d = new Date(ts);
-    return d.toLocaleDateString(language === "EN" ? "en-GB" : "ru-RU", {
+    return d.toLocaleDateString(language === "RU" ? "ru-RU" : "kk-KZ", {
       day: "2-digit",
       month: "short",
       year: "numeric",
-    }) + ", " + d.toLocaleTimeString(language === "EN" ? "en-GB" : "ru-RU", {
+    }) + ", " + d.toLocaleTimeString(language === "RU" ? "ru-RU" : "kk-KZ", {
       hour: "2-digit",
       minute: "2-digit",
     });
@@ -125,7 +125,7 @@ export default function OrdersPage() {
                         </div>
                         <div className="flex items-center gap-2 text-xs font-body text-surface-500">
                           <span>
-                            {itemCount(order)} {language === "RU" ? "товар." : language === "KZ" ? "тауар" : "items"}
+                            {itemCount(order)} {language === "RU" ? "товар." : "тауар"}
                           </span>
                           <span className="text-surface-300">·</span>
                           <span className="font-display font-semibold text-surface-800">

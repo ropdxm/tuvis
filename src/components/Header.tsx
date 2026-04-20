@@ -5,7 +5,7 @@ import { useLanguage } from "@/context/LanguageContext";
 import { useCart } from "@/context/CartContext";
 import { Language } from "@/types";
 
-const languages: Language[] = ["RU", "KZ", "EN"];
+const languages: Language[] = ["RU", "KZ"];
 
 export default function Header() {
   const { language, setLanguage } = useLanguage();

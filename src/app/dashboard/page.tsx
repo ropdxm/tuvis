@@ -1,16 +1,56 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useLanguage } from "@/context/LanguageContext";
 import { t } from "@/lib/translations";
-import { db } from "@/lib/firebase";
-import { collection, query, orderBy, onSnapshot, doc, updateDoc } from "firebase/firestore";
-import { Order, Language } from "@/types";
+import { db, storage } from "@/lib/firebase";
+import { addDoc, collection, deleteDoc, doc, onSnapshot, orderBy, query, updateDoc } from "firebase/firestore";
+import { deleteObject, getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import { sampleCategories, sampleSubcategories } from "@/lib/sampleData";
+import {
+  compressImage,
+  ensurePhoneCaseHierarchy,
+  getItemFormSubcategories,
+  makeTranslatedText,
+  normalizePhoneCaseItems,
+  textForLanguage,
+} from "@/lib/catalog";
+import { Language, MenuCategory, MenuItem, MenuSubcategory, Order } from "@/types";
 
 type TabFilter = "all" | "awaiting_confirmation" | "confirmed" | "cancelled";
+type DashboardSection = "orders" | "items";
+
+interface ItemFormState {
+  editingId: string | null;
+  nameRu: string;
+  nameKz: string;
+  descriptionRu: string;
+  descriptionKz: string;
+  price: string;
+  image: string;
+  imagePath: string;
+  categoryId: string;
+  subcategoryId: string;
+  available: boolean;
+}
 
 // Simple client-side password gate — for production, use proper auth
 const MANAGER_PASSWORD = "tuvis2026";
+
+const emptyItemForm: ItemFormState = {
+  editingId: null,
+  nameRu: "",
+  nameKz: "",
+  descriptionRu: "",
+  descriptionKz: "",
+  price: "",
+  image: "",
+  imagePath: "",
+  categoryId: "cases",
+  subcategoryId: "cases-iphone16",
+  available: true,
+};
 
 export default function DashboardPage() {
   const { language, setLanguage } = useLanguage();
@@ -21,6 +61,15 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<TabFilter>("awaiting_confirmation");
   const [loading, setLoading] = useState(true);
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
+  const [activeSection, setActiveSection] = useState<DashboardSection>("orders");
+  const [categories, setCategories] = useState<MenuCategory[]>(sampleCategories);
+  const [subcategories, setSubcategories] = useState<MenuSubcategory[]>(sampleSubcategories);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [itemsLoading, setItemsLoading] = useState(true);
+  const [itemForm, setItemForm] = useState<ItemFormState>(emptyItemForm);
+  const [itemImageBlob, setItemImageBlob] = useState<Blob | null>(null);
+  const [itemSaving, setItemSaving] = useState(false);
+  const [itemError, setItemError] = useState("");
 
   // Check session
   useEffect(() => {
@@ -45,6 +94,36 @@ export default function DashboardPage() {
     return () => unsubscribe();
   }, [authenticated]);
 
+  useEffect(() => {
+    if (!authenticated) return;
+
+    const unsubscribeCategories = onSnapshot(query(collection(db, "categories"), orderBy("order")), (snapshot) => {
+      if (snapshot.size > 0) {
+        setCategories(snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as MenuCategory));
+      }
+    });
+
+    const unsubscribeSubcategories = onSnapshot(query(collection(db, "subcategories"), orderBy("order")), (snapshot) => {
+      if (snapshot.size > 0) {
+        setSubcategories(ensurePhoneCaseHierarchy(snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as MenuSubcategory)));
+      }
+    });
+
+    const unsubscribeItems = onSnapshot(collection(db, "menuItems"), (snapshot) => {
+      setMenuItems(normalizePhoneCaseItems(snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as MenuItem)));
+      setItemsLoading(false);
+    }, (err) => {
+      console.error("Menu items listener error:", err);
+      setItemsLoading(false);
+    });
+
+    return () => {
+      unsubscribeCategories();
+      unsubscribeSubcategories();
+      unsubscribeItems();
+    };
+  }, [authenticated]);
+
   const handleLogin = () => {
     if (passwordInput === MANAGER_PASSWORD) {
       setAuthenticated(true);
@@ -67,6 +146,132 @@ export default function DashboardPage() {
       console.error("Failed to update order:", err);
     }
   }, []);
+
+  const itemSubcategoryOptions = useMemo(
+    () => getItemFormSubcategories(itemForm.categoryId, subcategories),
+    [itemForm.categoryId, subcategories]
+  );
+
+  const resetItemForm = useCallback(() => {
+    const defaultCategoryId = categories[0]?.id ?? "cases";
+    const defaultSubcategoryId = getItemFormSubcategories(defaultCategoryId, subcategories)[0]?.id ?? "";
+    setItemForm({ ...emptyItemForm, categoryId: defaultCategoryId, subcategoryId: defaultSubcategoryId });
+    setItemImageBlob(null);
+    setItemError("");
+  }, [categories, subcategories]);
+
+  const handleItemCategoryChange = (categoryId: string) => {
+    const nextSubcategoryId = getItemFormSubcategories(categoryId, subcategories)[0]?.id ?? "";
+    setItemForm((form) => ({ ...form, categoryId, subcategoryId: nextSubcategoryId }));
+  };
+
+  const handleItemImageChange = async (file?: File) => {
+    if (!file) return;
+    setItemError("");
+    try {
+      const image = await compressImage(file);
+      setItemImageBlob(image.blob);
+      setItemForm((form) => ({ ...form, image: image.dataUrl }));
+    } catch (err) {
+      console.error("Failed to compress image:", err);
+      setItemError("Could not process the image. Please try another file.");
+    }
+  };
+
+  const startEditingItem = (item: MenuItem) => {
+    setActiveSection("items");
+    setItemError("");
+    setItemForm({
+      editingId: item.id,
+      nameRu: item.name.RU,
+      nameKz: item.name.KZ,
+      descriptionRu: item.description.RU,
+      descriptionKz: item.description.KZ,
+      price: String(item.price),
+      image: item.image,
+      imagePath: item.imagePath ?? "",
+      categoryId: item.categoryId,
+      subcategoryId: item.subcategoryId ?? "",
+      available: item.available,
+    });
+    setItemImageBlob(null);
+  };
+
+  const saveItem = async () => {
+    const price = Number(itemForm.price);
+    if (!itemForm.nameRu.trim() || !itemForm.nameKz.trim() || !itemForm.descriptionRu.trim() || !itemForm.descriptionKz.trim() || !itemForm.image) {
+      setItemError("Заполните название и описание на русском и казахском, цену и изображение.");
+      return;
+    }
+    if (!Number.isFinite(price) || price <= 0) {
+      setItemError("Введите корректную цену больше 0.");
+      return;
+    }
+    if (itemSubcategoryOptions.length > 0 && !itemForm.subcategoryId) {
+      setItemError("Выберите модель или подкатегорию для товара.");
+      return;
+    }
+
+    setItemSaving(true);
+    setItemError("");
+
+    try {
+      let image = itemForm.image;
+      let imagePath = itemForm.imagePath;
+
+      if (itemImageBlob) {
+        imagePath = `menuItems/${itemForm.editingId ?? crypto.randomUUID()}-${Date.now()}.jpg`;
+        const imageRef = ref(storage, imagePath);
+        await uploadBytes(imageRef, itemImageBlob, { contentType: "image/jpeg" });
+        image = await getDownloadURL(imageRef);
+
+        if (itemForm.imagePath) {
+          await deleteObject(ref(storage, itemForm.imagePath)).catch(() => undefined);
+        }
+      }
+
+      const payload = {
+        name: makeTranslatedText(itemForm.nameRu.trim(), itemForm.nameKz.trim()),
+        description: makeTranslatedText(itemForm.descriptionRu.trim(), itemForm.descriptionKz.trim()),
+        price,
+        image,
+        imagePath,
+        categoryId: itemForm.categoryId,
+        subcategoryId: itemForm.subcategoryId || undefined,
+        available: itemForm.available,
+        updatedAt: Date.now(),
+      };
+
+      if (itemForm.editingId) {
+        await updateDoc(doc(db, "menuItems", itemForm.editingId), payload);
+      } else {
+        await addDoc(collection(db, "menuItems"), { ...payload, createdAt: Date.now() });
+      }
+      resetItemForm();
+    } catch (err) {
+      console.error("Failed to save item:", err);
+      setItemError("Не удалось сохранить товар.");
+    } finally {
+      setItemSaving(false);
+    }
+  };
+
+  const removeItem = async (itemId: string) => {
+    const confirmed = window.confirm("Remove this item from Firestore?");
+    if (!confirmed) return;
+
+    try {
+      const item = menuItems.find((menuItem) => menuItem.id === itemId);
+      await deleteDoc(doc(db, "menuItems", itemId));
+      if (item?.imagePath) {
+        await deleteObject(ref(storage, item.imagePath)).catch(() => undefined);
+      }
+      if (itemForm.editingId === itemId) resetItemForm();
+    } catch (err) {
+      console.error("Failed to remove item:", err);
+      setItemError("Не удалось удалить товар.");
+    }
+  };
 
   const filteredOrders = activeTab === "all" ? orders : orders.filter((o) => o.status === activeTab);
 
@@ -151,7 +356,7 @@ export default function DashboardPage() {
           <div className="flex items-center gap-2">
             {/* Language */}
             <div className="hidden sm:flex items-center bg-surface-100 rounded-full p-0.5">
-              {(["RU", "KZ", "EN"] as Language[]).map((lang) => (
+              {(["RU", "KZ"] as Language[]).map((lang) => (
                 <button
                   key={lang}
                   onClick={() => setLanguage(lang)}
@@ -175,6 +380,27 @@ export default function DashboardPage() {
       </header>
 
       <main className="max-w-6xl mx-auto px-4 py-5">
+        <div className="flex gap-2 mb-5">
+          {([
+            { key: "orders" as const, label: t("ordersTab", language) },
+            { key: "items" as const, label: t("itemsTab", language) },
+          ]).map((section) => (
+            <button
+              key={section.key}
+              onClick={() => setActiveSection(section.key)}
+              className={`px-4 py-2 rounded-lg border font-display text-sm font-semibold transition-all ${
+                activeSection === section.key
+                  ? "bg-surface-900 text-white border-surface-900"
+                  : "bg-white text-surface-600 border-surface-200 hover:border-surface-400"
+              }`}
+            >
+              {section.label}
+            </button>
+          ))}
+        </div>
+
+        {activeSection === "orders" ? (
+        <>
         {/* Stats Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 mb-5">
           {([
@@ -348,9 +574,7 @@ export default function DashboardPage() {
                             href={`https://api.whatsapp.com/send?phone=${order.customerPhone.replace(/[^0-9]/g, "")}&text=${encodeURIComponent(
                               language === "RU"
                                 ? `Здравствуйте, ${order.customerName}! Ваш заказ #${order.id.slice(0, 8).toUpperCase()} подтверждён.`
-                                : language === "KZ"
-                                ? `Сәлеметсіз бе, ${order.customerName}! Сіздің #${order.id.slice(0, 8).toUpperCase()} тапсырысыңыз расталды.`
-                                : `Hello, ${order.customerName}! Your order #${order.id.slice(0, 8).toUpperCase()} has been confirmed.`
+                                : `Сәлеметсіз бе, ${order.customerName}! Сіздің #${order.id.slice(0, 8).toUpperCase()} тапсырысыңыз расталды.`
                             )}`}
                             target="_blank"
                             rel="noopener noreferrer"
@@ -371,6 +595,237 @@ export default function DashboardPage() {
                 </div>
               );
             })}
+          </div>
+        )}
+        </>
+        ) : (
+          <div className="grid lg:grid-cols-[minmax(0,420px)_1fr] gap-5">
+            <section className="bg-white border border-surface-200 rounded-xl p-4 sm:p-5 h-fit">
+              <div className="flex items-center justify-between gap-3 mb-4">
+                <h2 className="font-display text-base font-bold text-surface-900">
+                  {itemForm.editingId ? t("editItem", language) : t("addItem", language)}
+                </h2>
+                {itemForm.editingId && (
+                  <button
+                    onClick={resetItemForm}
+                    className="px-3 py-1.5 rounded-lg border border-surface-200 text-xs font-display font-semibold text-surface-500 hover:text-surface-900 transition-all"
+                  >
+                    {t("newItem", language)}
+                  </button>
+                )}
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <label className="block font-display text-xs font-medium text-surface-600 mb-1.5">{t("nameRu", language)}</label>
+                  <input
+                    value={itemForm.nameRu}
+                    onChange={(e) => setItemForm((form) => ({ ...form, nameRu: e.target.value }))}
+                    className="w-full px-3.5 py-2.5 bg-surface-50 border border-surface-200 rounded-xl font-body text-sm text-surface-800 focus:outline-none focus:border-surface-400 focus:ring-1 focus:ring-surface-300 transition-all"
+                    placeholder="Прозрачный чехол Iphone 16"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-display text-xs font-medium text-surface-600 mb-1.5">{t("nameKz", language)}</label>
+                  <input
+                    value={itemForm.nameKz}
+                    onChange={(e) => setItemForm((form) => ({ ...form, nameKz: e.target.value }))}
+                    className="w-full px-3.5 py-2.5 bg-surface-50 border border-surface-200 rounded-xl font-body text-sm text-surface-800 focus:outline-none focus:border-surface-400 focus:ring-1 focus:ring-surface-300 transition-all"
+                    placeholder="Iphone 16 мөлдір қап"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-display text-xs font-medium text-surface-600 mb-1.5">{t("descriptionRu", language)}</label>
+                  <textarea
+                    value={itemForm.descriptionRu}
+                    onChange={(e) => setItemForm((form) => ({ ...form, descriptionRu: e.target.value }))}
+                    rows={3}
+                    className="w-full px-3.5 py-2.5 bg-surface-50 border border-surface-200 rounded-xl font-body text-sm text-surface-800 focus:outline-none focus:border-surface-400 focus:ring-1 focus:ring-surface-300 transition-all resize-none"
+                    placeholder="Тонкий силиконовый чехол с защитой камеры"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-display text-xs font-medium text-surface-600 mb-1.5">{t("descriptionKz", language)}</label>
+                  <textarea
+                    value={itemForm.descriptionKz}
+                    onChange={(e) => setItemForm((form) => ({ ...form, descriptionKz: e.target.value }))}
+                    rows={3}
+                    className="w-full px-3.5 py-2.5 bg-surface-50 border border-surface-200 rounded-xl font-body text-sm text-surface-800 focus:outline-none focus:border-surface-400 focus:ring-1 focus:ring-surface-300 transition-all resize-none"
+                    placeholder="Камера қорғанысымен жұқа силикон қап"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-display text-xs font-medium text-surface-600 mb-1.5">{t("price", language)}</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={itemForm.price}
+                      onChange={(e) => setItemForm((form) => ({ ...form, price: e.target.value }))}
+                      className="w-full px-3.5 py-2.5 bg-surface-50 border border-surface-200 rounded-xl font-body text-sm text-surface-800 focus:outline-none focus:border-surface-400 focus:ring-1 focus:ring-surface-300 transition-all"
+                      placeholder="2500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-display text-xs font-medium text-surface-600 mb-1.5">{t("availability", language)}</label>
+                    <select
+                      value={itemForm.available ? "available" : "hidden"}
+                      onChange={(e) => setItemForm((form) => ({ ...form, available: e.target.value === "available" }))}
+                      className="w-full px-3.5 py-2.5 bg-surface-50 border border-surface-200 rounded-xl font-body text-sm text-surface-800 focus:outline-none focus:border-surface-400 focus:ring-1 focus:ring-surface-300 transition-all"
+                    >
+                      <option value="available">{t("available", language)}</option>
+                      <option value="hidden">{t("hidden", language)}</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-display text-xs font-medium text-surface-600 mb-1.5">{t("category", language)}</label>
+                    <select
+                      value={itemForm.categoryId}
+                      onChange={(e) => handleItemCategoryChange(e.target.value)}
+                      className="w-full px-3.5 py-2.5 bg-surface-50 border border-surface-200 rounded-xl font-body text-sm text-surface-800 focus:outline-none focus:border-surface-400 focus:ring-1 focus:ring-surface-300 transition-all"
+                    >
+                      {categories.map((cat) => (
+                        <option key={cat.id} value={cat.id}>{textForLanguage(cat.name, language)}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block font-display text-xs font-medium text-surface-600 mb-1.5">{t("model", language)}</label>
+                    <select
+                      value={itemForm.subcategoryId}
+                      onChange={(e) => setItemForm((form) => ({ ...form, subcategoryId: e.target.value }))}
+                      className="w-full px-3.5 py-2.5 bg-surface-50 border border-surface-200 rounded-xl font-body text-sm text-surface-800 focus:outline-none focus:border-surface-400 focus:ring-1 focus:ring-surface-300 transition-all"
+                      disabled={itemSubcategoryOptions.length === 0}
+                    >
+                      {itemSubcategoryOptions.length === 0 ? (
+                        <option value="">{t("noModel", language)}</option>
+                      ) : (
+                        itemSubcategoryOptions.map((sub) => (
+                          <option key={sub.id} value={sub.id}>{textForLanguage(sub.name, language)}</option>
+                        ))
+                      )}
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block font-display text-xs font-medium text-surface-600 mb-1.5">
+                    {t("image", language)}
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleItemImageChange(e.target.files?.[0])}
+                    className="w-full px-3.5 py-2.5 bg-surface-50 border border-surface-200 rounded-xl font-body text-sm text-surface-800 file:mr-3 file:border-0 file:bg-surface-900 file:text-white file:rounded-lg file:px-3 file:py-1.5 file:text-xs file:font-display"
+                  />
+                  <p className="mt-1.5 font-body text-[11px] text-surface-400">
+                    {t("imageHint", language)}
+                  </p>
+                </div>
+
+                {itemForm.image && (
+                  <div className="relative w-24 h-24 rounded-lg overflow-hidden border border-surface-200 bg-surface-100">
+                    <Image src={itemForm.image} alt="Item preview" fill className="object-cover" unoptimized />
+                  </div>
+                )}
+
+                {itemError && (
+                  <p className="font-body text-xs text-red-500">{itemError}</p>
+                )}
+
+                <button
+                  onClick={saveItem}
+                  disabled={itemSaving}
+                  className="w-full py-2.5 bg-surface-900 hover:bg-surface-800 disabled:bg-surface-300 text-white font-display font-semibold text-sm rounded-xl transition-all active:scale-[0.97]"
+                >
+                  {itemSaving ? t("saving", language) : itemForm.editingId ? t("saveChanges", language) : t("addItem", language)}
+                </button>
+              </div>
+            </section>
+
+            <section>
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <h2 className="font-display text-base font-bold text-surface-900">{t("items", language)}</h2>
+                <span className="font-body text-xs text-surface-400">{menuItems.length} {t("itemsTotal", language)}</span>
+              </div>
+
+              {itemsLoading ? (
+                <div className="space-y-2.5">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="bg-white border border-surface-200 rounded-xl p-4 animate-pulse">
+                      <div className="h-16 bg-surface-100 rounded-lg" />
+                    </div>
+                  ))}
+                </div>
+              ) : menuItems.length === 0 ? (
+                <div className="bg-white border border-surface-200 rounded-xl p-8 text-center">
+                  <p className="font-body text-sm text-surface-400">{t("noItems", language)}</p>
+                </div>
+              ) : (
+                <div className="space-y-2.5">
+                  {menuItems.map((item) => {
+                    const category = categories.find((cat) => cat.id === item.categoryId);
+                    const subcategory = subcategories.find((sub) => sub.id === item.subcategoryId);
+
+                    return (
+                      <div key={item.id} className="bg-white border border-surface-200 rounded-xl p-3 flex gap-3">
+                        <div className="relative w-16 h-16 rounded-lg overflow-hidden border border-surface-100 bg-surface-100 flex-shrink-0">
+                          <Image src={item.image} alt={textForLanguage(item.name, language)} fill className="object-cover" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-col sm:flex-row sm:items-start gap-2">
+                            <div className="min-w-0 flex-1">
+                              <h3 className="font-display text-sm font-bold text-surface-900 truncate">
+                                {textForLanguage(item.name, language)}
+                              </h3>
+                              <p className="font-body text-xs text-surface-500 line-clamp-2">
+                                {textForLanguage(item.description, language)}
+                              </p>
+                              <p className="font-body text-[11px] text-surface-400 mt-1">
+                                {[category ? textForLanguage(category.name, language) : "", subcategory ? textForLanguage(subcategory.name, language) : ""].filter(Boolean).join(" / ")}
+                              </p>
+                            </div>
+                            <div className="flex sm:flex-col items-center sm:items-end gap-2">
+                              <span className="font-display text-sm font-bold text-surface-900">
+                                {item.price.toLocaleString()} ₸
+                              </span>
+                              <span className={`px-2 py-0.5 rounded-full border text-[10px] font-display font-semibold ${
+                                item.available ? "bg-green-50 text-green-700 border-green-200" : "bg-surface-50 text-surface-500 border-surface-200"
+                              }`}>
+                                {item.available ? t("available", language) : t("hidden", language)}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex gap-2 mt-3">
+                            <button
+                              onClick={() => startEditingItem(item)}
+                              className="px-3 py-1.5 bg-surface-900 text-white rounded-lg font-display text-xs font-semibold transition-all hover:bg-surface-800"
+                            >
+                              {t("edit", language)}
+                            </button>
+                            <button
+                              onClick={() => removeItem(item.id)}
+                              className="px-3 py-1.5 bg-white border border-red-200 text-red-600 hover:bg-red-50 rounded-lg font-display text-xs font-semibold transition-all"
+                            >
+                              {t("deleteItem", language)}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
           </div>
         )}
       </main>

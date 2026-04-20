@@ -4,40 +4,21 @@ import { useState, useMemo, useEffect } from "react";
 import { useLanguage } from "@/context/LanguageContext";
 import { useCart } from "@/context/CartContext";
 import { t } from "@/lib/translations";
-import { sampleCategories, sampleSubcategories, sampleMenuItems } from "@/lib/sampleData";
+import { sampleCategories, sampleSubcategories } from "@/lib/sampleData";
+import {
+  CATALOG_PAGE_SIZE,
+  ensurePhoneCaseHierarchy,
+  normalizePhoneCaseItems,
+  PHONE_CASE_BRAND_IDS,
+  PHONE_CASE_CATEGORY_ID,
+  readCachedCatalog,
+  writeCachedCatalog,
+} from "@/lib/catalog";
 import { db } from "@/lib/firebase";
-import { collection, getDocs, query, orderBy } from "firebase/firestore";
+import { collection, DocumentData, documentId, getDocs, limit, onSnapshot, orderBy, query, QueryDocumentSnapshot, startAfter, where } from "firebase/firestore";
 import Header from "@/components/Header";
 import MenuItemCard from "@/components/MenuItemCard";
 import { MenuCategory, MenuSubcategory, MenuItem } from "@/types";
-
-const PHONE_CASE_CATEGORY_ID = "cases";
-const PHONE_CASE_BRAND_IDS = ["cases-iphone", "cases-samsung", "cases-redmi", "cases-google-pixel"];
-
-function ensurePhoneCaseHierarchy(loadedSubcategories: MenuSubcategory[]) {
-  const phoneCaseIds = new Set(
-    sampleSubcategories.filter((sub) => sub.categoryId === PHONE_CASE_CATEGORY_ID).map((sub) => sub.id)
-  );
-  const merged = new Map<string, MenuSubcategory>();
-
-  loadedSubcategories
-    .filter((sub) => sub.categoryId !== PHONE_CASE_CATEGORY_ID || phoneCaseIds.has(sub.id))
-    .forEach((sub) => merged.set(sub.id, sub));
-
-  sampleSubcategories
-    .filter((sub) => sub.categoryId === PHONE_CASE_CATEGORY_ID)
-    .forEach((sub) => merged.set(sub.id, sub));
-
-  return Array.from(merged.values()).sort((a, b) => a.order - b.order);
-}
-
-function normalizePhoneCaseItems(loadedItems: MenuItem[]) {
-  return loadedItems.map((item) =>
-    item.categoryId === PHONE_CASE_CATEGORY_ID && item.subcategoryId === "cases-xiaomi"
-      ? { ...item, subcategoryId: "cases-redmi-note-14" }
-      : item
-  );
-}
 
 export default function MenuPage() {
   const { language } = useLanguage();
@@ -48,30 +29,92 @@ export default function MenuPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [categories, setCategories] = useState<MenuCategory[]>(sampleCategories);
   const [subcategories, setSubcategories] = useState<MenuSubcategory[]>(sampleSubcategories);
-  const [menuItems, setMenuItems] = useState<MenuItem[]>(sampleMenuItems);
-  const [loading, setLoading] = useState(true);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [lastVisibleItem, setLastVisibleItem] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
+  const [hasMoreItems, setHasMoreItems] = useState(false);
 
   useEffect(() => {
     async function loadData() {
       try {
-        const catSnap = await getDocs(query(collection(db, "categories"), orderBy("order")));
-        const subSnap = await getDocs(query(collection(db, "subcategories"), orderBy("order")));
-        const itemSnap = await getDocs(collection(db, "menuItems"));
+        const [catSnap, subSnap] = await Promise.all([
+          getDocs(query(collection(db, "categories"), orderBy("order"))),
+          getDocs(query(collection(db, "subcategories"), orderBy("order"))),
+        ]);
         if (catSnap.size > 0) setCategories(catSnap.docs.map((d) => ({ id: d.id, ...d.data() }) as MenuCategory));
         if (subSnap.size > 0) {
           setSubcategories(ensurePhoneCaseHierarchy(subSnap.docs.map((d) => ({ id: d.id, ...d.data() }) as MenuSubcategory)));
         }
-        if (itemSnap.size > 0) {
-          setMenuItems(normalizePhoneCaseItems(itemSnap.docs.map((d) => ({ id: d.id, ...d.data() }) as MenuItem)));
-        }
       } catch {
-        console.log("Using sample data (Firebase not configured)");
+        console.log("Using sample categories (Firebase not configured)");
       } finally {
-        setLoading(false);
       }
     }
     loadData();
   }, []);
+
+  useEffect(() => {
+    const cachedItems = readCachedCatalog();
+    if (cachedItems.length > 0) {
+      setMenuItems(cachedItems);
+      setLoadingProducts(false);
+    }
+
+    const firstPageQuery = query(
+      collection(db, "menuItems"),
+      where("available", "==", true),
+      orderBy(documentId()),
+      limit(CATALOG_PAGE_SIZE)
+    );
+
+    const unsubscribe = onSnapshot(firstPageQuery, (snapshot) => {
+      const items = normalizePhoneCaseItems(snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as MenuItem));
+      setMenuItems((currentItems) => {
+        const extraItems = currentItems.filter((item) => !items.some((firstPageItem) => firstPageItem.id === item.id));
+        const nextItems = [...items, ...extraItems];
+        writeCachedCatalog(nextItems);
+        return nextItems;
+      });
+      setLastVisibleItem(snapshot.docs.at(-1) ?? null);
+      setHasMoreItems(snapshot.size === CATALOG_PAGE_SIZE);
+      setLoadingProducts(false);
+    }, (err) => {
+      console.error("Menu items listener error:", err);
+      if (cachedItems.length === 0) setMenuItems([]);
+      setLoadingProducts(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const loadMoreItems = async () => {
+    if (!lastVisibleItem || loadingMore) return;
+
+    setLoadingMore(true);
+    try {
+      const nextPageSnap = await getDocs(query(
+        collection(db, "menuItems"),
+        where("available", "==", true),
+        orderBy(documentId()),
+        startAfter(lastVisibleItem),
+        limit(CATALOG_PAGE_SIZE)
+      ));
+      const nextItems = normalizePhoneCaseItems(nextPageSnap.docs.map((d) => ({ id: d.id, ...d.data() }) as MenuItem));
+      setMenuItems((currentItems) => {
+        const existingIds = new Set(currentItems.map((item) => item.id));
+        const mergedItems = [...currentItems, ...nextItems.filter((item) => !existingIds.has(item.id))];
+        writeCachedCatalog(mergedItems);
+        return mergedItems;
+      });
+      setLastVisibleItem(nextPageSnap.docs.at(-1) ?? null);
+      setHasMoreItems(nextPageSnap.size === CATALOG_PAGE_SIZE);
+    } catch (err) {
+      console.error("Failed to load more items:", err);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   // Reset subcategory when category changes
   useEffect(() => {
@@ -245,7 +288,7 @@ export default function MenuPage() {
         )}
 
         {/* Loading */}
-        {loading && (
+        {loadingProducts && (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="bg-white border border-surface-200 rounded-2xl overflow-hidden animate-pulse">
@@ -261,7 +304,7 @@ export default function MenuPage() {
         )}
 
 {/* Items Grid - Grouped by Category */}
-{!loading && (
+{!loadingProducts && (
   <>
     {filteredItems.length === 0 ? (
       <div className="text-center py-16">
@@ -300,6 +343,17 @@ export default function MenuPage() {
               </div>
             </section>
           ))}
+      </div>
+    )}
+    {hasMoreItems && (
+      <div className="pt-5 text-center">
+        <button
+          onClick={loadMoreItems}
+          disabled={loadingMore}
+          className="px-5 py-2.5 bg-white border border-surface-200 hover:border-surface-400 disabled:opacity-60 rounded-xl font-display text-sm font-semibold text-surface-700 transition-all"
+        >
+          {loadingMore ? t("loadingProducts", language) : t("loadMore", language)}
+        </button>
       </div>
     )}
   </>

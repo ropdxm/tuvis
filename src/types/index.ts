@@ -1,9 +1,8 @@
-export type Language = "RU" | "KZ" | "EN";
+export type Language = "RU" | "KZ";
 
 export interface TranslatedText {
   RU: string;
   KZ: string;
-  EN: string;
 }
 
 export interface MenuItem {
@@ -12,9 +11,12 @@ export interface MenuItem {
   description: TranslatedText;
   price: number;
   image: string;
+  imagePath?: string;
   categoryId: string;
   subcategoryId?: string;
   available: boolean;
+  createdAt?: number;
+  updatedAt?: number;
 }
 
 export interface MenuSubcategory {

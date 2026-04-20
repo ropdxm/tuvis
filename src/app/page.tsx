@@ -6,7 +6,7 @@ import { t } from "@/lib/translations";
 import Header from "@/components/Header";
 import { Language } from "@/types";
 
-const languages: Language[] = ["RU", "KZ", "EN"];
+const languages: Language[] = ["RU", "KZ"];
 
 export default function HomePage() {
   const { language, setLanguage } = useLanguage();

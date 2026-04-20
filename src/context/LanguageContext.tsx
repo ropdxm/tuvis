@@ -18,7 +18,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const saved = localStorage.getItem("DDD optom-lang") as Language | null;
-    if (saved && ["RU", "KZ", "EN"].includes(saved)) {
+    if (saved && ["RU", "KZ"].includes(saved)) {
       setLanguage(saved);
     }
   }, []);

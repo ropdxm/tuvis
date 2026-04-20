@@ -11,18 +11,44 @@ import { collection, addDoc } from "firebase/firestore";
 import { addOrderToHistory } from "@/lib/orderHistory";
 import Header from "@/components/Header";
 
+const phoneCountries = [
+  { code: "+7", label: "KZ/RU" },
+  { code: "+996", label: "KG" },
+  { code: "+998", label: "UZ" },
+  { code: "+992", label: "TJ" },
+  { code: "+90", label: "TR" },
+  { code: "+86", label: "CN" },
+  { code: "+1", label: "US" },
+];
+
+function normalizePhoneNumber(phone: string, countryCode: string) {
+  const compact = phone.replace(/[^\d+]/g, "");
+  const withCountryCode = compact.startsWith("+") ? compact : `${countryCode}${compact.replace(/^0+/, "")}`;
+  return withCountryCode;
+}
+
+function isValidInternationalPhone(phone: string) {
+  return /^\+[1-9]\d{7,14}$/.test(phone);
+}
+
 export default function PaymentPage() {
   const { language } = useLanguage();
   const { items, subtotal, total, clearCart } = useCart();
   const router = useRouter();
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
+  const [phoneCountryCode, setPhoneCountryCode] = useState("+7");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
   const handleIPaid = async () => {
     if (!customerName.trim() || !customerPhone.trim()) {
       setError(t("fillAllFields", language));
+      return;
+    }
+    const normalizedPhone = normalizePhoneNumber(customerPhone, phoneCountryCode);
+    if (!isValidInternationalPhone(normalizedPhone)) {
+      setError(t("invalidPhone", language));
       return;
     }
     if (items.length === 0) return;
@@ -42,7 +68,7 @@ export default function PaymentPage() {
         total,
         status: "awaiting_confirmation",
         customerName: customerName.trim(),
-        customerPhone: customerPhone.trim(),
+        customerPhone: normalizedPhone,
         language,
         createdAt: Date.now(),
       };
@@ -56,7 +82,7 @@ export default function PaymentPage() {
         subtotal,
         total,
         customerName: customerName.trim(),
-        customerPhone: customerPhone.trim(),
+        customerPhone: normalizedPhone,
         language,
         createdAt: orderData.createdAt,
       });
@@ -169,9 +195,7 @@ export default function PaymentPage() {
           </div>
 
           <p className="font-body text-[11px] text-surface-400">
-            {language === "RU" ? "Это демо QR. Замените на настоящий Kaspi QR продавца." :
-             language === "KZ" ? "Бұл демо QR. Сатушының нақты Kaspi QR-мен ауыстырыңыз." :
-             "This is a demo QR. Replace with your actual Kaspi seller QR."}
+            {language === "RU" ? "Это демо QR. Замените на настоящий Kaspi QR продавца." : "Бұл демо QR. Сатушының нақты Kaspi QR-мен ауыстырыңыз."}
           </p>
         </div>
 
@@ -194,13 +218,27 @@ export default function PaymentPage() {
               <label className="block font-display text-xs font-medium text-surface-600 mb-1.5">
                 {t("yourPhone", language)}
               </label>
-              <input
-                type="tel"
-                value={customerPhone}
-                onChange={(e) => setCustomerPhone(e.target.value)}
-                placeholder={t("phonePlaceholder", language)}
-                className="w-full px-3.5 py-2.5 bg-surface-50 border border-surface-200 rounded-xl font-body text-sm text-surface-800 placeholder:text-surface-400 focus:outline-none focus:border-surface-400 focus:ring-1 focus:ring-surface-300 transition-all"
-              />
+              <div className="flex gap-2">
+                <select
+                  value={phoneCountryCode}
+                  onChange={(e) => setPhoneCountryCode(e.target.value)}
+                  className="w-28 px-2.5 py-2.5 bg-surface-50 border border-surface-200 rounded-xl font-body text-sm text-surface-800 focus:outline-none focus:border-surface-400 focus:ring-1 focus:ring-surface-300 transition-all"
+                >
+                  {phoneCountries.map((country) => (
+                    <option key={`${country.label}-${country.code}`} value={country.code}>
+                      {country.label} {country.code}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="tel"
+                  value={customerPhone}
+                  onChange={(e) => setCustomerPhone(e.target.value)}
+                  placeholder={t("phonePlaceholder", language)}
+                  className="min-w-0 flex-1 px-3.5 py-2.5 bg-surface-50 border border-surface-200 rounded-xl font-body text-sm text-surface-800 placeholder:text-surface-400 focus:outline-none focus:border-surface-400 focus:ring-1 focus:ring-surface-300 transition-all"
+                />
+              </div>
+              <p className="mt-1.5 font-body text-[11px] text-surface-400">{t("phoneHelp", language)}</p>
             </div>
           </div>
         </div>
