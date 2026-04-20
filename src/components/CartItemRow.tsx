@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useLanguage } from "@/context/LanguageContext";
 import { useCart } from "@/context/CartContext";
+import { shouldBypassImageOptimizer } from "@/lib/images";
 import { t } from "@/lib/translations";
 import { CartItem } from "@/types";
 
@@ -20,6 +21,7 @@ export default function CartItemRow({ item }: { item: CartItem }) {
           fill
           className="object-cover"
           sizes="80px"
+          unoptimized={shouldBypassImageOptimizer(item.menuItem.image)}
         />
       </div>
 

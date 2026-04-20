@@ -7,6 +7,7 @@ import { t } from "@/lib/translations";
 import { sampleCategories, sampleSubcategories } from "@/lib/sampleData";
 import {
   CATALOG_PAGE_SIZE,
+  clearCachedCatalog,
   ensurePhoneCaseHierarchy,
   normalizePhoneCaseItems,
   PHONE_CASE_BRAND_IDS,
@@ -32,8 +33,16 @@ export default function MenuPage() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [refreshingProducts, setRefreshingProducts] = useState(false);
   const [lastVisibleItem, setLastVisibleItem] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
   const [hasMoreItems, setHasMoreItems] = useState(false);
+
+  const firstPageQuery = useMemo(() => query(
+    collection(db, "menuItems"),
+    where("available", "==", true),
+    orderBy(documentId()),
+    limit(CATALOG_PAGE_SIZE)
+  ), []);
 
   useEffect(() => {
     async function loadData() {
@@ -61,13 +70,6 @@ export default function MenuPage() {
       setLoadingProducts(false);
     }
 
-    const firstPageQuery = query(
-      collection(db, "menuItems"),
-      where("available", "==", true),
-      orderBy(documentId()),
-      limit(CATALOG_PAGE_SIZE)
-    );
-
     const unsubscribe = onSnapshot(firstPageQuery, (snapshot) => {
       const items = normalizePhoneCaseItems(snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as MenuItem));
       setMenuItems((currentItems) => {
@@ -86,7 +88,28 @@ export default function MenuPage() {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [firstPageQuery]);
+
+  const refreshCatalog = async () => {
+    if (refreshingProducts) return;
+
+    setRefreshingProducts(true);
+    clearCachedCatalog();
+
+    try {
+      const snapshot = await getDocs(firstPageQuery);
+      const items = normalizePhoneCaseItems(snapshot.docs.map((d) => ({ id: d.id, ...d.data() }) as MenuItem));
+      setMenuItems(items);
+      writeCachedCatalog(items);
+      setLastVisibleItem(snapshot.docs.at(-1) ?? null);
+      setHasMoreItems(snapshot.size === CATALOG_PAGE_SIZE);
+      setLoadingProducts(false);
+    } catch (err) {
+      console.error("Failed to refresh catalog:", err);
+    } finally {
+      setRefreshingProducts(false);
+    }
+  };
 
   const loadMoreItems = async () => {
     if (!lastVisibleItem || loadingMore) return;
@@ -174,10 +197,17 @@ export default function MenuPage() {
 
       <main className="max-w-3xl mx-auto px-4 pt-16 pb-28">
         {/* Title */}
-        <div className="pt-4 pb-4">
+        <div className="pt-4 pb-4 flex items-center justify-between gap-3">
           <h1 className="font-display text-xl sm:text-2xl font-bold text-surface-900">
             {t("menu", language)}
           </h1>
+          <button
+            onClick={refreshCatalog}
+            disabled={refreshingProducts}
+            className="flex-shrink-0 px-3 py-1.5 rounded-lg border border-surface-200 bg-white hover:border-surface-400 disabled:opacity-60 font-display text-xs font-semibold text-surface-600 transition-all"
+          >
+            {refreshingProducts ? t("updatingCatalog", language) : t("updateCatalog", language)}
+          </button>
         </div>
 
         {/* Search */}

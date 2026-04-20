@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "seed": "tsx src/lib/seedFirebase.ts"
+    "seed": "tsx src/lib/seedFirebase.ts",
+    "seed:products": "tsx src/lib/seedProducts.ts"
   },
   "dependencies": {
     "firebase": "^11.0.0",

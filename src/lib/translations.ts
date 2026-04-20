@@ -83,6 +83,8 @@ type TranslationKeys =
   | "deleteItem"
   | "loadMore"
   | "loadingProducts"
+  | "updateCatalog"
+  | "updatingCatalog"
   | "pendingOrders"
   | "confirmedOrders"
   | "allOrders"
@@ -191,6 +193,8 @@ export const translations: Record<TranslationKeys, Record<Language, string>> = {
   deleteItem: { RU: "Удалить", KZ: "Жою" },
   loadMore: { RU: "Показать еще", KZ: "Тағы көрсету" },
   loadingProducts: { RU: "Загружаем товары...", KZ: "Тауарлар жүктелуде..." },
+  updateCatalog: { RU: "Обновить", KZ: "Жаңарту" },
+  updatingCatalog: { RU: "Обновляем...", KZ: "Жаңартылуда..." },
   pendingOrders: { RU: "Ожидающие", KZ: "Күтудегілер" },
   confirmedOrders: { RU: "Подтверждённые", KZ: "Расталғандар" },
   allOrders: { RU: "Все заказы", KZ: "Барлық тапсырыстар" },

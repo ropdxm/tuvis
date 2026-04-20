@@ -99,3 +99,9 @@ export function writeCachedCatalog(items: MenuItem[]) {
     localStorage.setItem(CATALOG_CACHE_KEY, JSON.stringify(items));
   } catch {}
 }
+
+export function clearCachedCatalog() {
+  try {
+    localStorage.removeItem(CATALOG_CACHE_KEY);
+  } catch {}
+}

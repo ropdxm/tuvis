@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useLanguage } from "@/context/LanguageContext";
 import { useCart } from "@/context/CartContext";
+import { shouldBypassImageOptimizer } from "@/lib/images";
 import { t } from "@/lib/translations";
 import { MenuItem } from "@/types";
 
@@ -27,7 +28,7 @@ export default function MenuItemCard({ item }: { item: MenuItem }) {
           className="object-cover transition-transform duration-500 group-hover:scale-105"
           sizes="200px"
           quality={60}
-          unoptimized={item.image.startsWith("data:")}
+          unoptimized={shouldBypassImageOptimizer(item.image)}
         />
         {/* Price badge */}
         <div className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-sm rounded-lg px-2 py-0.5 shadow-sm">

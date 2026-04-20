@@ -8,6 +8,7 @@ import { db, storage } from "@/lib/firebase";
 import { addDoc, collection, deleteDoc, doc, onSnapshot, orderBy, query, updateDoc } from "firebase/firestore";
 import { deleteObject, getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { sampleCategories, sampleSubcategories } from "@/lib/sampleData";
+import { shouldBypassImageOptimizer } from "@/lib/images";
 import {
   compressImage,
   ensurePhoneCaseHierarchy,
@@ -808,7 +809,13 @@ export default function DashboardPage() {
                     return (
                       <div key={item.id} className="bg-white border border-surface-200 rounded-xl p-3 flex gap-3">
                         <div className="relative w-16 h-16 rounded-lg overflow-hidden border border-surface-100 bg-surface-100 flex-shrink-0">
-                          <Image src={item.image} alt={textForLanguage(item.name, language)} fill className="object-cover" />
+                          <Image
+                            src={item.image}
+                            alt={textForLanguage(item.name, language)}
+                            fill
+                            className="object-cover"
+                            unoptimized={shouldBypassImageOptimizer(item.image)}
+                          />
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex flex-col sm:flex-row sm:items-start gap-2">
