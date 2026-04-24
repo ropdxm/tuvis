@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { collection, getDocsFromServer, onSnapshot, query, where } from "firebase/firestore";
 import Header from "@/components/Header";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
@@ -10,12 +10,29 @@ import { db } from "@/lib/firebase";
 import { t } from "@/lib/translations";
 import { Order } from "@/types";
 
+const statusKeyByOrderStatus: Record<Order["status"], "awaitingConfirmation" | "confirmed" | "cancelled"> = {
+  awaiting_confirmation: "awaitingConfirmation",
+  confirmed: "confirmed",
+  cancelled: "cancelled",
+};
+
 export default function OrdersPage() {
   const { language } = useLanguage();
   const { user, loading } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
+
+  const loadOrdersFromServer = async (uid: string) => {
+    const ordersQuery = query(collection(db, "orders"), where("userId", "==", uid));
+    const snapshot = await getDocsFromServer(ordersQuery);
+    const nextOrders = snapshot.docs
+      .map((doc) => ({ id: doc.id, ...doc.data() }) as Order)
+      .sort((left, right) => right.createdAt - left.createdAt);
+
+    setOrders(nextOrders);
+    setHydrated(true);
+  };
 
   useEffect(() => {
     if (!user) {
@@ -25,6 +42,10 @@ export default function OrdersPage() {
     }
 
     const ordersQuery = query(collection(db, "orders"), where("userId", "==", user.uid));
+    loadOrdersFromServer(user.uid).catch((error) => {
+      console.error("Failed to load orders from server:", error);
+    });
+
     const unsubscribe = onSnapshot(ordersQuery, (snapshot) => {
       const nextOrders = snapshot.docs
         .map((doc) => ({ id: doc.id, ...doc.data() }) as Order)
@@ -35,6 +56,24 @@ export default function OrdersPage() {
     });
 
     return () => unsubscribe();
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const handleFocus = () => {
+      loadOrdersFromServer(user.uid).catch((error) => {
+        console.error("Failed to refresh orders from server:", error);
+      });
+    };
+
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleFocus);
+
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleFocus);
+    };
   }, [user]);
 
   const formatDate = (timestamp: number) => {
@@ -157,7 +196,7 @@ export default function OrdersPage() {
                             {order.total.toLocaleString()} {t("currency", language)}
                           </span>
                           <span className="text-surface-300">·</span>
-                          <span>{order.paymentStatus === "paid" ? t("confirmed", language) : t("paymentPending", language)}</span>
+                          <span>{t(statusKeyByOrderStatus[order.status], language)}</span>
                         </div>
                       </div>
 
@@ -220,7 +259,7 @@ export default function OrdersPage() {
                         </div>
                       </div>
 
-                      {order.paymentLink && (
+                      {order.status==="awaiting_confirmation" && (
                         <a
                           href={order.paymentLink}
                           target="_blank"

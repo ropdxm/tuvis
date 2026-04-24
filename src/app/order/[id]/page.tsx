@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { doc, onSnapshot } from "firebase/firestore";
+import { doc, getDocFromServer, onSnapshot } from "firebase/firestore";
 import Header from "@/components/Header";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
@@ -26,8 +26,32 @@ export default function OrderPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
+  const loadOrderFromServer = async (uid: string, id: string) => {
+    const snapshot = await getDocFromServer(doc(db, "orders", id));
+    if (!snapshot.exists()) {
+      setError(true);
+      setLoading(false);
+      return;
+    }
+
+    const nextOrder = { id: snapshot.id, ...snapshot.data() } as Order;
+    if (nextOrder.userId !== uid) {
+      setError(true);
+      setLoading(false);
+      return;
+    }
+
+    setOrder(nextOrder);
+    setError(false);
+    setLoading(false);
+  };
+
   useEffect(() => {
     if (!orderId || !user) return;
+
+    loadOrderFromServer(user.uid, orderId).catch((loadError) => {
+      console.error("Failed to load order from server:", loadError);
+    });
 
     const unsubscribe = onSnapshot(
       doc(db, "orders", orderId),
@@ -55,6 +79,24 @@ export default function OrderPage() {
     );
 
     return () => unsubscribe();
+  }, [orderId, user]);
+
+  useEffect(() => {
+    if (!orderId || !user) return;
+
+    const handleFocus = () => {
+      loadOrderFromServer(user.uid, orderId).catch((loadError) => {
+        console.error("Failed to refresh order from server:", loadError);
+      });
+    };
+
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleFocus);
+
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleFocus);
+    };
   }, [orderId, user]);
 
   const lang: Language = order?.language || language;

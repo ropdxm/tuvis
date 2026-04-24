@@ -128,7 +128,6 @@ type TranslationKeys =
   | "paymentLinkHint"
   | "viewMyOrders"
   | "signedInAs"
-  | "paymentPending"
   | "phoneSaved"
   | "saveProfile"
   | "verificationEmailSent"
@@ -267,7 +266,6 @@ export const translations: Record<TranslationKeys, Record<Language, string>> = {
   paymentLinkHint: { RU: "Если оплата не открылась, используйте кнопку ниже.", KZ: "Төлем ашылмаса, төмендегі батырманы қолданыңыз." },
   viewMyOrders: { RU: "Смотреть мои заказы", KZ: "Менің тапсырыстарымды көру" },
   signedInAs: { RU: "Вы вошли как", KZ: "Сіз кірдіңіз" },
-  paymentPending: { RU: "Ожидает оплаты", KZ: "Төлем күтілуде" },
   phoneSaved: { RU: "Профиль сохранён.", KZ: "Профиль сақталды." },
   saveProfile: { RU: "Сохранить профиль", KZ: "Профильді сақтау" },
   verificationEmailSent: { RU: "Письмо для подтверждения отправлено.", KZ: "Растау хаты жіберілді." },

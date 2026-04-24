@@ -57,7 +57,6 @@ export interface Order {
   customerEmail?: string;
   paymentMethod?: "kaspi_link";
   paymentLink?: string;
-  paymentStatus?: "pending" | "paid";
   createdAt: number;
   language: Language;
 }

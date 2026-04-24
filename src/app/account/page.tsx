@@ -27,6 +27,18 @@ function getAuthErrorMessage(code: string, language: "RU" | "KZ") {
       return language === "RU" ? "Неверный email или пароль." : "Email немесе құпия сөз қате.";
     case "auth/popup-closed-by-user":
       return language === "RU" ? "Вход через Google был закрыт." : "Google арқылы кіру терезесі жабылды.";
+    case "auth/popup-blocked":
+      return language === "RU" ? "Браузер заблокировал окно входа Google." : "Браузер Google кіру терезесін бұғаттады.";
+    case "auth/cancelled-popup-request":
+      return language === "RU" ? "Попробуйте ещё раз: предыдущее окно входа было прервано." : "Қайта көріңіз: алдыңғы кіру терезесі үзілді.";
+    case "auth/unauthorized-domain":
+      return language === "RU"
+        ? "Этот домен не добавлен в Authorized domains Firebase Authentication."
+        : "Бұл домен Firebase Authentication ішіндегі Authorized domains тізіміне қосылмаған.";
+    case "auth/operation-not-allowed":
+      return language === "RU"
+        ? "В Firebase Authentication не включён вход через Google."
+        : "Firebase Authentication ішінде Google арқылы кіру қосылмаған.";
     default:
       return language === "RU" ? "Не удалось выполнить вход. Попробуйте снова." : "Кіру мүмкін болмады. Қайта көріңіз.";
   }

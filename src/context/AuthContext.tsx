@@ -16,10 +16,11 @@ import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
   signInWithPopup,
+  signInWithRedirect,
   signOut,
   updateProfile,
 } from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, onSnapshot, setDoc } from "firebase/firestore";
 import { normalizePhoneNumber } from "@/lib/contact";
 import { auth, db, googleProvider } from "@/lib/firebase";
 import { UserProfile } from "@/types";
@@ -111,6 +112,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => unsubscribe();
   }, []);
 
+  useEffect(() => {
+    if (!user) return;
+
+    const profileRef = doc(db, "users", user.uid);
+    const unsubscribe = onSnapshot(profileRef, async (snapshot) => {
+      if (!snapshot.exists()) {
+        await syncProfile(user);
+        return;
+      }
+
+      setProfile(snapshot.data() as UserProfile);
+      setProfileLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
+
   const value = useMemo<AuthContextType>(() => ({
     user,
     profile,
@@ -138,8 +156,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await signInWithEmailAndPassword(auth, email, password);
     },
     loginWithGoogle: async () => {
-      const credential = await signInWithPopup(auth, googleProvider);
-      await syncProfile(credential.user);
+      try {
+        const credential = await signInWithPopup(auth, googleProvider);
+        await syncProfile(credential.user);
+      } catch (error: any) {
+        if (
+          error?.code === "auth/popup-blocked" ||
+          error?.code === "auth/cancelled-popup-request"
+        ) {
+          await signInWithRedirect(auth, googleProvider);
+          return;
+        }
+
+        throw error;
+      }
     },
     logout: async () => {
       await signOut(auth);

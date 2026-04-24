@@ -91,7 +91,6 @@ export default function PaymentPage() {
         customerEmail: customerEmail.trim().toLowerCase(),
         paymentMethod: "kaspi_link" as const,
         paymentLink: KASPI_PAY_LINK,
-        paymentStatus: "pending" as const,
         language,
         createdAt: Date.now(),
       };
