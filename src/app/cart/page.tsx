@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { useCart } from "@/context/CartContext";
 import { t } from "@/lib/translations";
@@ -10,6 +11,7 @@ import CartItemRow from "@/components/CartItemRow";
 export default function CartPage() {
   const { language } = useLanguage();
   const { items, subtotal, total } = useCart();
+  const { user, loading } = useAuth();
 
   return (
     <div className="min-h-dvh bg-surface-50">
@@ -77,12 +79,27 @@ export default function CartPage() {
             </div>
 
             {/* Checkout → Payment page */}
-            <Link
-              href="/payment"
-              className="w-full py-3 sm:py-3.5 bg-surface-900 hover:bg-surface-800 text-white font-display font-semibold text-sm sm:text-base rounded-2xl transition-all shadow-lg shadow-surface-900/15 active:scale-[0.98] flex items-center justify-center gap-2"
-            >
-              {t("checkout", language)}
-            </Link>
+            {user ? (
+              <Link
+                href="/payment"
+                className="w-full py-3 sm:py-3.5 bg-surface-900 hover:bg-surface-800 text-white font-display font-semibold text-sm sm:text-base rounded-2xl transition-all shadow-lg shadow-surface-900/15 active:scale-[0.98] flex items-center justify-center gap-2"
+              >
+                {t("checkout", language)}
+              </Link>
+            ) : (
+              <Link
+                href="/account?next=/payment"
+                className="w-full py-3 sm:py-3.5 bg-surface-900 hover:bg-surface-800 text-white font-display font-semibold text-sm sm:text-base rounded-2xl transition-all shadow-lg shadow-surface-900/15 active:scale-[0.98] flex items-center justify-center gap-2"
+              >
+                {loading ? t("processing", language) : t("loginToContinue", language)}
+              </Link>
+            )}
+
+            {!user && !loading && (
+              <p className="font-body text-xs text-surface-400 text-center mt-3">
+                {t("loginRequiredCheckout", language)}
+              </p>
+            )}
 
             <div className="text-center mt-4">
               <Link href="/menu" className="font-body text-sm text-surface-400 hover:text-surface-600 transition-colors">

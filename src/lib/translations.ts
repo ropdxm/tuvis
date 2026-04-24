@@ -108,7 +108,36 @@ type TranslationKeys =
   | "noOrderHistory"
   | "noOrderHistoryDesc"
   | "clearHistory"
-  | "managerCall";
+  | "managerCall"
+  | "account"
+  | "loginToContinue"
+  | "loginRequiredCheckout"
+  | "loginRequiredOrders"
+  | "signIn"
+  | "register"
+  | "signInWithGoogle"
+  | "fullName"
+  | "passwordMin"
+  | "alreadyHaveAccount"
+  | "noAccountYet"
+  | "authWelcome"
+  | "authSubtitle"
+  | "goToKaspi"
+  | "goToKaspiDesc"
+  | "openKaspiPay"
+  | "paymentLinkHint"
+  | "viewMyOrders"
+  | "signedInAs"
+  | "paymentPending"
+  | "phoneSaved"
+  | "saveProfile"
+  | "verificationEmailSent"
+  | "verifyEmailNotice"
+  | "verifyEmailRequired"
+  | "resendVerification"
+  | "refreshStatus"
+  | "emailVerified"
+  | "emailNotVerified";
 
 export const translations: Record<TranslationKeys, Record<Language, string>> = {
   siteName: { RU: "DDD optom", KZ: "DDD optom" },
@@ -219,6 +248,35 @@ export const translations: Record<TranslationKeys, Record<Language, string>> = {
   noOrderHistoryDesc: { RU: "Здесь будут ваши прошлые заказы", KZ: "Мұнда сіздің өткен тапсырыстарыңыз болады" },
   clearHistory: { RU: "Очистить", KZ: "Тазалау" },
   managerCall: { RU: "Наш менеджер вам скоро позвонит! Ожидайте.", KZ: "Біз сізге жуырда хабарласамыз!" },
+  account: { RU: "Аккаунт", KZ: "Аккаунт" },
+  loginToContinue: { RU: "Войдите, чтобы продолжить", KZ: "Жалғастыру үшін кіріңіз" },
+  loginRequiredCheckout: { RU: "Чтобы оформить заказ, сначала войдите в аккаунт.", KZ: "Тапсырыс беру үшін алдымен аккаунтқа кіріңіз." },
+  loginRequiredOrders: { RU: "История заказов доступна только после входа в аккаунт.", KZ: "Тапсырыс тарихы аккаунтқа кіргеннен кейін ғана ашылады." },
+  signIn: { RU: "Войти", KZ: "Кіру" },
+  register: { RU: "Регистрация", KZ: "Тіркелу" },
+  signInWithGoogle: { RU: "Войти через Google", KZ: "Google арқылы кіру" },
+  fullName: { RU: "Имя и фамилия", KZ: "Аты-жөні" },
+  passwordMin: { RU: "Пароль должен быть не меньше 6 символов.", KZ: "Құпия сөз кемінде 6 таңбадан тұруы керек." },
+  alreadyHaveAccount: { RU: "Уже есть аккаунт?", KZ: "Аккаунтыңыз бар ма?" },
+  noAccountYet: { RU: "Ещё нет аккаунта?", KZ: "Аккаунтыңыз әлі жоқ па?" },
+  authWelcome: { RU: "Ваш аккаунт", KZ: "Сіздің аккаунтыңыз" },
+  authSubtitle: { RU: "Войдите, чтобы оформлять заказы и смотреть историю.", KZ: "Тапсырыс беру және тарихты көру үшін кіріңіз." },
+  goToKaspi: { RU: "Оплатить через Kaspi Pay", KZ: "Kaspi Pay арқылы төлеу" },
+  goToKaspiDesc: { RU: "После создания заказа откроется ссылка Kaspi Pay.", KZ: "Тапсырыс жасалғаннан кейін Kaspi Pay сілтемесі ашылады." },
+  openKaspiPay: { RU: "Открыть Kaspi Pay", KZ: "Kaspi Pay ашу" },
+  paymentLinkHint: { RU: "Если оплата не открылась, используйте кнопку ниже.", KZ: "Төлем ашылмаса, төмендегі батырманы қолданыңыз." },
+  viewMyOrders: { RU: "Смотреть мои заказы", KZ: "Менің тапсырыстарымды көру" },
+  signedInAs: { RU: "Вы вошли как", KZ: "Сіз кірдіңіз" },
+  paymentPending: { RU: "Ожидает оплаты", KZ: "Төлем күтілуде" },
+  phoneSaved: { RU: "Профиль сохранён.", KZ: "Профиль сақталды." },
+  saveProfile: { RU: "Сохранить профиль", KZ: "Профильді сақтау" },
+  verificationEmailSent: { RU: "Письмо для подтверждения отправлено.", KZ: "Растау хаты жіберілді." },
+  verifyEmailNotice: { RU: "Подтвердите email по письму, которое мы отправили.", KZ: "Біз жіберген хат арқылы email-ды растаңыз." },
+  verifyEmailRequired: { RU: "Перед оформлением заказа подтвердите email в аккаунте.", KZ: "Тапсырыс бермес бұрын аккаунттағы email-ды растаңыз." },
+  resendVerification: { RU: "Отправить письмо ещё раз", KZ: "Хатты қайта жіберу" },
+  refreshStatus: { RU: "Обновить статус", KZ: "Күйді жаңарту" },
+  emailVerified: { RU: "Email подтверждён", KZ: "Email расталған" },
+  emailNotVerified: { RU: "Email не подтверждён", KZ: "Email расталмаған" },
 };
 
 export function t(key: TranslationKeys, lang: Language): string {

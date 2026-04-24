@@ -3,12 +3,13 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { useLanguage } from "@/context/LanguageContext";
-import { t } from "@/lib/translations";
-import { db } from "@/lib/firebase";
 import { doc, onSnapshot } from "firebase/firestore";
 import Header from "@/components/Header";
-import { Order, Language } from "@/types";
+import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
+import { db } from "@/lib/firebase";
+import { t } from "@/lib/translations";
+import { Language, Order } from "@/types";
 
 const statusDisplay: Record<Order["status"], { color: string; bg: string; key: "awaitingConfirmation" | "confirmed" | "cancelled" }> = {
   awaiting_confirmation: { color: "text-amber-600", bg: "bg-amber-50 border-amber-200", key: "awaitingConfirmation" },
@@ -20,20 +21,31 @@ export default function OrderPage() {
   const params = useParams();
   const orderId = params.id as string;
   const { language } = useLanguage();
+  const { user, loading: authLoading } = useAuth();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    if (!orderId) return;
+    if (!orderId || !user) return;
+
     const unsubscribe = onSnapshot(
       doc(db, "orders", orderId),
-      (snap) => {
-        if (snap.exists()) {
-          setOrder({ id: snap.id, ...snap.data() } as Order);
-        } else {
+      (snapshot) => {
+        if (!snapshot.exists()) {
           setError(true);
+          setLoading(false);
+          return;
         }
+
+        const nextOrder = { id: snapshot.id, ...snapshot.data() } as Order;
+        if (nextOrder.userId !== user.uid) {
+          setError(true);
+          setLoading(false);
+          return;
+        }
+
+        setOrder(nextOrder);
         setLoading(false);
       },
       () => {
@@ -41,8 +53,9 @@ export default function OrderPage() {
         setLoading(false);
       }
     );
+
     return () => unsubscribe();
-  }, [orderId]);
+  }, [orderId, user]);
 
   const lang: Language = order?.language || language;
 
@@ -57,7 +70,19 @@ export default function OrderPage() {
           </h1>
         </div>
 
-        {loading && (
+        {!authLoading && !user && (
+          <div className="bg-white border border-surface-200 rounded-2xl p-6 text-center animate-fade-in">
+            <p className="font-body text-sm text-surface-500 mb-5">{t("loginRequiredOrders", lang)}</p>
+            <Link
+              href="/account?next=/orders"
+              className="inline-flex px-6 py-3 bg-surface-900 hover:bg-surface-800 text-white font-display text-sm font-semibold rounded-xl transition-all"
+            >
+              {t("signIn", lang)}
+            </Link>
+          </div>
+        )}
+
+        {(authLoading || loading) && user && (
           <div className="space-y-4 animate-pulse">
             <div className="bg-white border border-surface-200 rounded-2xl p-6">
               <div className="h-16 bg-surface-100 rounded-xl mb-4" />
@@ -79,15 +104,14 @@ export default function OrderPage() {
             <p className="font-body text-sm text-surface-500 mb-4">
               {lang === "RU" ? "Заказ не найден" : "Тапсырыс табылмады"}
             </p>
-            <Link href="/menu" className="px-6 py-2.5 bg-surface-900 hover:bg-surface-800 text-white font-display text-sm font-medium rounded-xl transition-all inline-block">
-              {t("backToMenu", lang)}
+            <Link href="/orders" className="px-6 py-2.5 bg-surface-900 hover:bg-surface-800 text-white font-display text-sm font-medium rounded-xl transition-all inline-block">
+              {t("orderHistory", lang)}
             </Link>
           </div>
         )}
 
         {order && (
           <div className="space-y-4 animate-fade-in">
-            {/* Success / Status Header */}
             <div className="text-center py-5">
               {order.status === "awaiting_confirmation" && (
                 <div className="w-16 h-16 mx-auto rounded-full bg-amber-50 border-2 border-amber-300 flex items-center justify-center mb-4">
@@ -121,7 +145,6 @@ export default function OrderPage() {
               </p>
             </div>
 
-            {/* Order Number + Status */}
             <div className="bg-white border border-surface-200 rounded-2xl p-5">
               <div className="flex items-center justify-between mb-4">
                 <div>
@@ -138,7 +161,6 @@ export default function OrderPage() {
                 </div>
               </div>
 
-              {/* Customer info */}
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
                   <p className="font-display text-[11px] text-surface-400 uppercase tracking-widest">{t("customer", lang)}</p>
@@ -157,18 +179,17 @@ export default function OrderPage() {
               </div>
             </div>
 
-            {/* Order Items */}
             <div className="bg-white border border-surface-200 rounded-2xl p-5">
               <p className="font-display text-[11px] text-surface-400 uppercase tracking-widest mb-3">
                 {t("orderItems", lang)}
               </p>
               <div className="space-y-2.5">
-                {order.items.map((item, i) => (
-                  <div key={i} className="flex items-center justify-between py-1.5 border-b border-surface-100 last:border-b-0">
+                {order.items.map((item, index) => (
+                  <div key={index} className="flex items-center justify-between py-1.5 border-b border-surface-100 last:border-b-0">
                     <div className="flex-1 min-w-0">
                       <p className="font-body text-sm text-surface-800 truncate">{item.name[lang]}</p>
                       <p className="font-body text-xs text-surface-400">
-                        {item.quantity} × {item.price.toLocaleString()} {t("currency", lang)}
+                        {item.quantity} x {item.price.toLocaleString()} {t("currency", lang)}
                       </p>
                     </div>
                     <span className="font-display text-sm font-semibold text-surface-800 ml-3">
@@ -183,13 +204,26 @@ export default function OrderPage() {
               </div>
             </div>
 
-            {/* Back */}
+            {order.paymentLink && (
+              <div className="bg-white border border-surface-200 rounded-2xl p-5">
+                <p className="font-body text-sm text-surface-500 mb-4">{t("paymentLinkHint", lang)}</p>
+                <a
+                  href={order.paymentLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full inline-flex items-center justify-center px-6 py-3 bg-surface-900 hover:bg-surface-800 text-white font-display text-sm font-semibold rounded-xl transition-all"
+                >
+                  {t("openKaspiPay", lang)}
+                </a>
+              </div>
+            )}
+
             <div className="text-center pt-3">
               <Link
-                href="/menu"
+                href="/orders"
                 className="inline-flex items-center gap-2 px-6 py-2.5 bg-surface-900 hover:bg-surface-800 text-white font-display text-sm font-medium rounded-xl transition-all"
               >
-                ← {t("backToMenu", lang)}
+                {t("viewMyOrders", lang)}
               </Link>
             </div>
           </div>

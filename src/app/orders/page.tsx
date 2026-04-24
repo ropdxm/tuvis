@@ -1,38 +1,64 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useLanguage } from "@/context/LanguageContext";
-import { t } from "@/lib/translations";
-import { useOrderHistory, LocalOrder } from "@/lib/orderHistory";
+import { collection, onSnapshot, query, where } from "firebase/firestore";
 import Header from "@/components/Header";
+import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
+import { db } from "@/lib/firebase";
+import { t } from "@/lib/translations";
+import { Order } from "@/types";
 
 export default function OrdersPage() {
   const { language } = useLanguage();
-  const { orders, hydrated, clearHistory } = useOrderHistory();
+  const { user, loading } = useAuth();
+  const [orders, setOrders] = useState<Order[]>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [hydrated, setHydrated] = useState(false);
 
-  const formatDate = (ts: number) => {
-    const d = new Date(ts);
-    return d.toLocaleDateString(language === "RU" ? "ru-RU" : "kk-KZ", {
+  useEffect(() => {
+    if (!user) {
+      setOrders([]);
+      setHydrated(true);
+      return;
+    }
+
+    const ordersQuery = query(collection(db, "orders"), where("userId", "==", user.uid));
+    const unsubscribe = onSnapshot(ordersQuery, (snapshot) => {
+      const nextOrders = snapshot.docs
+        .map((doc) => ({ id: doc.id, ...doc.data() }) as Order)
+        .sort((a, b) => b.createdAt - a.createdAt);
+
+      setOrders(nextOrders);
+      setHydrated(true);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
+
+  const formatDate = (timestamp: number) => {
+    const date = new Date(timestamp);
+    return date.toLocaleDateString(language === "RU" ? "ru-RU" : "kk-KZ", {
       day: "2-digit",
       month: "short",
       year: "numeric",
-    }) + ", " + d.toLocaleTimeString(language === "RU" ? "ru-RU" : "kk-KZ", {
+    }) + ", " + date.toLocaleTimeString(language === "RU" ? "ru-RU" : "kk-KZ", {
       hour: "2-digit",
       minute: "2-digit",
     });
   };
 
-  const itemCount = (order: LocalOrder) =>
-    order.items.reduce((s, i) => s + i.quantity, 0);
+  const itemCount = useMemo(
+    () => (order: Order) => order.items.reduce((sum, item) => sum + item.quantity, 0),
+    []
+  );
 
   return (
     <div className="min-h-dvh bg-surface-50">
       <Header />
 
       <main className="max-w-2xl mx-auto px-4 pt-16 pb-10">
-        {/* Back + Title */}
         <div className="flex items-center justify-between pt-4 pb-4">
           <div className="flex items-center gap-3">
             <Link
@@ -47,22 +73,24 @@ export default function OrdersPage() {
               {t("orderHistory", language)}
             </h1>
           </div>
-
-          {orders.length > 0 && (
-            <button
-              onClick={clearHistory}
-              className="font-body text-xs text-surface-400 hover:text-red-500 transition-colors"
-            >
-              {t("clearHistory", language)}
-            </button>
-          )}
         </div>
 
-        {/* Loading / hydration */}
-        {!hydrated && (
+        {!loading && !user && (
+          <div className="bg-white border border-surface-200 rounded-2xl p-6 text-center animate-fade-in">
+            <p className="font-body text-sm text-surface-500 mb-5">{t("loginRequiredOrders", language)}</p>
+            <Link
+              href="/account?next=/orders"
+              className="inline-flex px-6 py-3 bg-surface-900 hover:bg-surface-800 text-white font-display text-sm font-semibold rounded-xl transition-all"
+            >
+              {t("signIn", language)}
+            </Link>
+          </div>
+        )}
+
+        {(loading || !hydrated) && (
           <div className="space-y-3">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-white border border-surface-200 rounded-xl p-4 animate-pulse">
+            {[1, 2, 3].map((item) => (
+              <div key={item} className="bg-white border border-surface-200 rounded-xl p-4 animate-pulse">
                 <div className="h-5 bg-surface-100 rounded w-1/3 mb-2" />
                 <div className="h-4 bg-surface-100 rounded w-2/3" />
               </div>
@@ -70,8 +98,7 @@ export default function OrdersPage() {
           </div>
         )}
 
-        {/* Empty */}
-        {hydrated && orders.length === 0 && (
+        {!loading && user && hydrated && orders.length === 0 && (
           <div className="flex flex-col items-center justify-center py-20 animate-fade-in">
             <div className="w-20 h-20 rounded-full bg-surface-100 border border-surface-200 flex items-center justify-center mb-5">
               <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-surface-400">
@@ -97,8 +124,7 @@ export default function OrdersPage() {
           </div>
         )}
 
-        {/* Orders List */}
-        {hydrated && orders.length > 0 && (
+        {!loading && user && hydrated && orders.length > 0 && (
           <div className="space-y-2.5">
             {orders.map((order) => {
               const isExpanded = expandedId === order.id;
@@ -108,7 +134,6 @@ export default function OrdersPage() {
                   key={order.id}
                   className="bg-white border border-surface-200 rounded-xl overflow-hidden transition-all animate-fade-in"
                 >
-                  {/* Order Header — clickable */}
                   <button
                     onClick={() => setExpandedId(isExpanded ? null : order.id)}
                     className="w-full text-left px-4 py-3.5 hover:bg-surface-50 transition-colors"
@@ -125,17 +150,26 @@ export default function OrdersPage() {
                         </div>
                         <div className="flex items-center gap-2 text-xs font-body text-surface-500">
                           <span>
-                            {itemCount(order)} {language === "RU" ? "товар." : "тауар"}
+                            {itemCount(order)} {language === "RU" ? "тов." : "тауар"}
                           </span>
                           <span className="text-surface-300">·</span>
                           <span className="font-display font-semibold text-surface-800">
                             {order.total.toLocaleString()} {t("currency", language)}
                           </span>
+                          <span className="text-surface-300">·</span>
+                          <span>{order.paymentStatus === "paid" ? t("confirmed", language) : t("paymentPending", language)}</span>
                         </div>
                       </div>
 
                       <svg
-                        width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
                         className={`text-surface-400 flex-shrink-0 ml-3 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
                       >
                         <polyline points="6 9 12 15 18 9" />
@@ -143,10 +177,8 @@ export default function OrdersPage() {
                     </div>
                   </button>
 
-                  {/* Expanded Details */}
                   {isExpanded && (
                     <div className="px-4 pb-4 border-t border-surface-100 animate-fade-in">
-                      {/* Customer info */}
                       <div className="grid grid-cols-2 gap-3 mt-3 mb-3">
                         <div>
                           <p className="font-display text-[10px] text-surface-400 uppercase tracking-widest">{t("customer", language)}</p>
@@ -164,18 +196,15 @@ export default function OrdersPage() {
                         )}
                       </div>
 
-                      {/* Items */}
-                          <p className="font-body text-sm text-center text-surface-800 mt-0.5">{t("managerCall", language)}</p>
-
-                      <div className="bg-surface-50 rounded-lg p-3">
+                      <div className="bg-surface-50 rounded-lg p-3 mb-3">
                         <p className="font-display text-[10px] text-surface-400 uppercase tracking-widest mb-2">
                           {t("orderItems", language)}
                         </p>
                         <div className="space-y-1.5">
-                          {order.items.map((item, i) => (
-                            <div key={i} className="flex justify-between text-sm">
+                          {order.items.map((item, index) => (
+                            <div key={index} className="flex justify-between text-sm">
                               <span className="font-body text-surface-700 truncate mr-2">
-                                {item.name[language]} × {item.quantity}
+                                {item.name[language]} x {item.quantity}
                               </span>
                               <span className="font-display font-semibold text-surface-800 flex-shrink-0">
                                 {(item.price * item.quantity).toLocaleString()} {t("currency", language)}
@@ -190,6 +219,17 @@ export default function OrdersPage() {
                           </span>
                         </div>
                       </div>
+
+                      {order.paymentLink && (
+                        <a
+                          href={order.paymentLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex px-4 py-2.5 bg-surface-900 hover:bg-surface-800 text-white font-display text-sm font-semibold rounded-xl transition-all"
+                        >
+                          {t("openKaspiPay", language)}
+                        </a>
+                      )}
                     </div>
                   )}
                 </div>

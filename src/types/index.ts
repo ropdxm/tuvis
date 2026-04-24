@@ -41,6 +41,8 @@ export interface CartItem {
 
 export interface Order {
   id: string;
+  userId: string;
+  userEmail: string;
   items: {
     menuItemId: string;
     name: TranslatedText;
@@ -53,6 +55,19 @@ export interface Order {
   customerName: string;
   customerPhone: string;
   customerEmail?: string;
+  paymentMethod?: "kaspi_link";
+  paymentLink?: string;
+  paymentStatus?: "pending" | "paid";
   createdAt: number;
   language: Language;
+}
+
+export interface UserProfile {
+  uid: string;
+  email: string;
+  displayName: string;
+  phone: string;
+  emailVerified: boolean;
+  createdAt?: number;
+  updatedAt?: number;
 }
